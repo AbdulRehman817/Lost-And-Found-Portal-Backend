@@ -1,4 +1,4 @@
-import Post from "../models/post.mo";
+import Post from "../models/post.models.js";
 const createPost = async (req, res) => {
   try {
     const { title, type, description, category, location, imageUrl } = req.body;
