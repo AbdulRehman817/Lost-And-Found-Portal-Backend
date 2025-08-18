@@ -1,4 +1,4 @@
-import User from "../models/user.models.js";
+import { User } from "../models/user.models.js";
 import jwt from "jsonwebtoken";
 const generateAccessToken = (user) => {
   jwt.sign(
@@ -105,7 +105,7 @@ const getUserProfile = (req, res) => {
   }
 };
 
-const LogoutUser = async (req, res) => {
+const logoutUser = async (req, res) => {
   // * Refresh token cookie clear karo
   res.clearCookie("refreshToken");
   console.log("🚪 User logged out");
@@ -146,10 +146,4 @@ const refreshToken = async (req, res) => {
   }
 };
 
-export const userController = {
-  signup,
-  signin,
-  getUserProfile,
-  LogoutUser,
-  refreshToken,
-};
+export { signup, signin, getUserProfile, logoutUser, refreshToken };

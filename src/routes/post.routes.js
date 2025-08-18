@@ -6,7 +6,7 @@ import {
   deletePost,
 } from "../controllers/post.controller.js";
 import { upload } from "../middleware/user.multer.js";
-import authMiddleware from "../middleware/auth.middleware.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 

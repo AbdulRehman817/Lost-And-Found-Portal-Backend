@@ -31,6 +31,13 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    commentCount: {
+      type: Number,
+      status: {
+        type: String,
+        enum: ["active", "inactive"],
+      },
+    },
   },
   {
     timestamps: true,

@@ -1,22 +1,15 @@
-import Post from "../models/post.models.js";
+import { Post } from "../models/post.models.js";
+import { uploadImageToImageKit } from "../utils/imageKit.js";
 const createPost = async (req, res) => {
   try {
-    const { title, type, description, category, location, imageUrl } = req.body;
+    const { title, type, description, category, location } = req.body;
 
     // 1. Validate required fields
-    if (
-      !title ||
-      !type ||
-      !description ||
-      !category ||
-      !location ||
-      !imageUrl
-    ) {
+    if (!title || !type || !description || !category || !location)
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
-    }
 
     // 2. Validate "type"
     if (!["lost", "found"].includes(type.toLowerCase())) {
@@ -25,7 +18,17 @@ const createPost = async (req, res) => {
         message: "Type must be either 'lost' or 'found'",
       });
     }
+    if (!req.file) {
+      console.log("❌ No image uploaded");
+      return res.status(400).json({ message: "No image file uploaded" });
+    }
 
+    const imageUrl = await uploadImageToImageKit(req.file.path);
+    console.log("📷 Image uploaded to Cloudinary:", imageUrl);
+
+    if (!imageUrl) {
+      return res.status(500).json({ message: "Image upload failed" });
+    }
     // 3. Create the post (attach userId from auth middleware)
     const newPost = new Post({
       userId: req.user._id,
@@ -34,7 +37,7 @@ const createPost = async (req, res) => {
       description,
       category,
       location,
-      imageUrl,
+      image: imageUrl,
     });
 
     await newPost.save();
