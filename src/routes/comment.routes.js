@@ -5,26 +5,22 @@ import {
   updateComment,
   deleteComment,
 } from "../controllers/comment.controller.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 
 // TODO ----------------- Comments Routes -----------------
 
-//**  Create a comment for a specific post
-//! POST /api/comments/:id  (id = postId)
-router.post("/:id", authMiddleware, createComment);
+//! Create comment for a post
+router.post("/posts/:postId/comments", requireAuth, createComment);
 
-//**  Get all comments for a specific post
-//! GET /api/comments/:id  (id = postId)
-router.get("/:id", getComments);
+//! Get all comments for a post
+router.get("/posts/:postId/comments", getComments);
 
-//**  Update a specific comment
-//! PUT /api/comments/:id  (id = commentId)
-router.put("/:id", authMiddleware, updateComment);
+//! Update a specific comment
+router.put("/comments/:commentId", requireAuth, updateComment);
 
-//**  Delete a specific comment (soft delete)
-//! DELETE /api/comments/:id  (id = commentId)
-router.delete("/:id", authMiddleware, deleteComment);
+//! Delete a specific comment
+router.delete("/comments/:commentId", requireAuth, deleteComment);
 
 export default router;

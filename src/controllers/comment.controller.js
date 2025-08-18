@@ -4,9 +4,9 @@ import { Post } from "../models/post.models.js";
 // TODO ==================== Create Comment ====================
 const createComment = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, parentId } = req.body;
     const postId = req.params.id;
-    const userId = req.user._id; // comes from auth middleware
+    const userId = req.auth.userId; // updated for Clerk
 
     // ✅ Validation
     if (!postId) {
@@ -31,6 +31,7 @@ const createComment = async (req, res) => {
       postId,
       userId,
       message,
+      parentId: parentId || null,
     });
 
     await newComment.save();
@@ -55,7 +56,7 @@ const createComment = async (req, res) => {
 };
 
 // TODO ==================== Get Comments ====================
-const getComments = (req, res) => {
+const getComments = async (req, res) => {
   try {
     const postId = req.params.id;
     if (!postId) {
@@ -63,17 +64,28 @@ const getComments = (req, res) => {
         .status(400)
         .json({ success: false, error: "Post ID is required" });
     }
-    const post = Post.findById(postId);
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
-    const comments = Comment.findById(postId)
-      .populate("authorId", "name email avatar") // only select what you need
-      .sort({ createdAt: -1 }); // newest first
+    const comments = await Comment.find({ postId })
+      .populate("userId", "name email avatar")
+      .sort({ createdAt: -1 });
+
+    const commentsWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await Comment.find({ parentId: comment._id })
+          .populate("userId", "name email avatar")
+          .sort({ createdAt: 1 }); // oldest first in thread
+
+        return { ...comment._doc, replies };
+      })
+    );
+
     return res.status(200).json({
       success: true,
       count: comments.length,
-      comments,
+      comments: commentsWithReplies,
     });
   } catch (error) {
     console.error("Error fetching comments:", error);
@@ -88,7 +100,8 @@ const getComments = (req, res) => {
 const deleteComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.user._id;
+    const userId = req.auth.userId; // updated for Clerk
+
     if (!commentId) {
       return res
         .status(400)
@@ -134,7 +147,7 @@ const deleteComment = async (req, res) => {
 const updateComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.user._id;
+    const userId = req.auth.userId; // updated for Clerk
     const { message } = req.body;
 
     // ✅ Validate inputs
@@ -158,7 +171,7 @@ const updateComment = async (req, res) => {
     }
 
     // ✅ Check ownership
-    if (comment.authorId.toString() !== userId.toString()) {
+    if (comment.userId.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
         error: "You are not authorized to update this comment",

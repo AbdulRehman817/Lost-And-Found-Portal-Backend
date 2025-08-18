@@ -6,18 +6,13 @@ import {
   deletePost,
 } from "../controllers/post.controller.js";
 import { upload } from "../middleware/user.multer.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 
-router.post("/createPost", authMiddleware, upload.single("image"), createPost);
-router.get("/getAllPosts", authMiddleware, getAllPosts);
-router.put(
-  "/updatePost/:id",
-  authMiddleware,
-  upload.single("image"),
-  updatePost
-);
-router.delete("/deletePost/:id", authMiddleware, deletePost);
+router.post("/createPost", requireAuth, upload.single("image"), createPost);
+router.get("/getAllPosts", requireAuth, getAllPosts);
+router.put("/updatePost/:id", requireAuth, upload.single("image"), updatePost);
+router.delete("/deletePost/:id", requireAuth, deletePost);
 
 export default router;

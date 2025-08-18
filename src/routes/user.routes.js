@@ -1,18 +1,12 @@
 import express from "express";
-import {
-  signup,
-  signin,
-  getUserProfile,
-  logoutUser,
-  refreshToken,
-} from "../controllers/user.controllers.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { getUserProfile } from "../controllers/user.controllers.js";
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 
-router.post("/register", signup);
-router.post("/login", signin);
-router.post("/logout", logoutUser);
-router.post("/refreshToken", refreshToken);
-router.get("/profile", authMiddleware, getUserProfile); // Apply middleware
+// Clerk handles register/login/logout via its SDK on the frontend
+// You only keep protected endpoints in your backend
+
+router.get("/profile", requireAuth, getUserProfile);
+
 export default router;

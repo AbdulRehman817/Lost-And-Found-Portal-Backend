@@ -31,7 +31,7 @@ const createPost = async (req, res) => {
     }
     // 3. Create the post (attach userId from auth middleware)
     const newPost = new Post({
-      userId: req.user._id,
+      userId: req.auth.userId,
       title,
       type,
       description,
@@ -99,7 +99,7 @@ const updatePost = async (req, res) => {
     }
 
     // Ownership check
-    if (post.userId.toString() !== req.user._id.toString()) {
+    if (post.userId.toString() !== req.auth.userId.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });
@@ -149,7 +149,7 @@ const deletePost = async (req, res) => {
     }
 
     // Ownership check
-    if (post.userId.toString() !== req.user._id.toString()) {
+    if (post.userId.toString() !== req.auth.userId.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });

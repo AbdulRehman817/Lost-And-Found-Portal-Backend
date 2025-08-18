@@ -1,8 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 import express from "express";
 import connectDB from "./src/db/index.js";
 import postRoute from "./src/routes/post.routes.js";
+import { clerkMiddleware } from "@clerk/express";
 import userRoute from "./src/routes/user.routes.js";
 import commentRoute from "./src/routes/comment.routes.js";
 import cookieParser from "cookie-parser";
@@ -24,7 +26,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1", userRoute);
 app.use("/api/v1", postRoute);
 app.use("/api/v1", commentRoute);
-
+app.use(clerkMiddleware());
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
