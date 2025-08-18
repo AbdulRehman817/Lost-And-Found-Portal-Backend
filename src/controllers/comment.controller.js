@@ -55,7 +55,7 @@ const createComment = async (req, res) => {
 };
 
 // TODO ==================== Get Comments ====================
-const getComment = (req, res) => {
+const getComments = (req, res) => {
   try {
     const postId = req.params.id;
     if (!postId) {
@@ -102,12 +102,10 @@ const deleteComment = async (req, res) => {
     }
 
     if (comment.userId.toString() !== userId.toString()) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "You are not authorized to delete this comment",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "You are not authorized to delete this comment",
+      });
     }
     comment.isDeleted = true;
     await comment.save();
@@ -161,12 +159,10 @@ const updateComment = async (req, res) => {
 
     // ✅ Check ownership
     if (comment.authorId.toString() !== userId.toString()) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "You are not authorized to update this comment",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "You are not authorized to update this comment",
+      });
     }
 
     // ✅ Update message
@@ -187,4 +183,4 @@ const updateComment = async (req, res) => {
   }
 };
 
-export { createComment, getComment, deleteComment, updateComment };
+export { createComment, getComments, deleteComment, updateComment };

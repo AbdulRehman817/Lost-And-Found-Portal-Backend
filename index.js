@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import connectDB from "./src/db/index.js";
-
 import postRoute from "./src/routes/post.routes.js";
-import cookieParser from "cookie-parser";
 import userRoute from "./src/routes/user.routes.js";
+import commentRoute from "./src/routes/comment.routes.js";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 const app = express();
 let corsOptions = {
@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1", userRoute);
 app.use("/api/v1", postRoute);
+app.use("/api/v1", commentRoute);
 
 connectDB()
   .then(() => {
