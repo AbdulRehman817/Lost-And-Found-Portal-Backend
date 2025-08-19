@@ -25,6 +25,12 @@ const createComment = async (req, res) => {
     if (!post) {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
+    const existingComment = await Comment.findOne({ postId, userId, message });
+    if (existingComment) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Comment already exists" });
+    }
 
     // ✅ Create new comment
     const newComment = new Comment({
