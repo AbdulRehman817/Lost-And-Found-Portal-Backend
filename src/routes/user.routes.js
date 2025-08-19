@@ -1,5 +1,8 @@
 import express from "express";
-import { getUserProfile } from "../controllers/user.controllers.js";
+import {
+  getUserProfile,
+  updateUserId,
+} from "../controllers/user.controllers.js";
 import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
@@ -8,5 +11,6 @@ const router = express.Router();
 // You only keep protected endpoints in your backend
 
 router.get("/profile", requireAuth, getUserProfile);
+router.put("/profile", requireAuth, updateUserId);
 
 export default router;
