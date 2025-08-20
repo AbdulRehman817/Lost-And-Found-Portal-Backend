@@ -1,15 +1,18 @@
 import { Post } from "../models/post.models.js";
 import { uploadImageToImageKit } from "../utils/imageKit.js";
+
+// ====================== createPost ====================== //
 const createPost = async (req, res) => {
   try {
     const { title, type, description, category, location } = req.body;
 
     // 1. Validate required fields
-    if (!title || !type || !description || !category || !location)
+    if (!title || !type || !description || !category || !location) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
+    }
 
     // 2. Validate "type"
     if (!["lost", "found"].includes(type.toLowerCase())) {
@@ -18,31 +21,28 @@ const createPost = async (req, res) => {
         message: "Type must be either 'lost' or 'found'",
       });
     }
+
+    // 3. Validate image
     if (!req.file) {
-      console.log("❌ No image uploaded");
       return res.status(400).json({ message: "No image file uploaded" });
     }
 
     const imageUrl = await uploadImageToImageKit(req.file.path);
-    console.log("📷 Image uploaded to Cloudinary:", imageUrl);
-
     if (!imageUrl) {
       return res.status(500).json({ message: "Image upload failed" });
     }
-    // 3. Create the post (attach userId from auth middleware)
-    const newPost = new Post({
-      userId: req.auth.userId,
+
+    // 4. Create post with MongoDB User._id
+    const newPost = await Post.create({
+      userId: req.dbUser._id, // ✅ from ensureUser
       title,
       type,
       description,
       category,
       location,
-      image: imageUrl,
+      imageUrl: imageUrl,
     });
 
-    await newPost.save();
-
-    // 4. Success response
     return res.status(201).json({
       success: true,
       message: "Post created successfully",
@@ -57,6 +57,7 @@ const createPost = async (req, res) => {
   }
 };
 
+// ====================== getAllPosts ====================== //
 const getAllPosts = async (req, res) => {
   try {
     const { type, category, location } = req.query;
@@ -67,10 +68,9 @@ const getAllPosts = async (req, res) => {
     if (category) filter.category = category.toLowerCase();
     if (location) filter.location = { $regex: location, $options: "i" };
 
-    // Fetch posts + populate user details
     const posts = await Post.find(filter)
-      .populate("userId", "username email")
-      .sort({ createdAt: -1 }); // latest first
+      .populate("userId", "name email") // ✅ fixed fields
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -86,9 +86,10 @@ const getAllPosts = async (req, res) => {
   }
 };
 
+// ====================== updatePost ====================== //
 const updatePost = async (req, res) => {
   try {
-    const { id } = req.params; // postId
+    const { id } = req.params;
     const { title, type, description, category, location, imageUrl } = req.body;
 
     const post = await Post.findById(id);
@@ -98,14 +99,13 @@ const updatePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    // Ownership check
-    if (post.userId.toString() !== req.auth.userId.toString()) {
+    // ✅ Ownership check with MongoDB User._id
+    if (post.userId.toString() !== req.dbUser._id.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });
     }
 
-    // Validate type if updated
     if (type && !["lost", "found"].includes(type.toLowerCase())) {
       return res.status(400).json({
         success: false,
@@ -119,7 +119,7 @@ const updatePost = async (req, res) => {
     post.description = description || post.description;
     post.category = category || post.category;
     post.location = location || post.location;
-    post.imageUrl = imageUrl || post.imageUrl;
+    post.image = imageUrl || post.image;
 
     await post.save();
 
@@ -137,9 +137,10 @@ const updatePost = async (req, res) => {
   }
 };
 
+// ====================== deletePost ====================== //
 const deletePost = async (req, res) => {
   try {
-    const { id } = req.params; // postId
+    const { id } = req.params;
 
     const post = await Post.findById(id);
     if (!post) {
@@ -148,8 +149,8 @@ const deletePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    // Ownership check
-    if (post.userId.toString() !== req.auth.userId.toString()) {
+    // ✅ Ownership check
+    if (post.userId.toString() !== req.dbUser._id.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });

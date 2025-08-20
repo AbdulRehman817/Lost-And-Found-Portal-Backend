@@ -1,10 +1,12 @@
 import { Like } from "../models/like.models.js";
 import { Post } from "../models/post.models.js";
 
+// TODO ====================== createLike ======================   //
+
 const createLike = async (req, res) => {
   try {
     const postId = req.params.id;
-    const userId = req.auth.userId;
+    const userId = req.dbUser._id;
 
     // ✅ Check if post exists
     const post = await Post.findById(postId);
@@ -60,10 +62,12 @@ const createLike = async (req, res) => {
   }
 };
 
+// TODO ====================== deleteLike ======================   //
+
 const deleteLike = async (req, res) => {
   try {
     const postId = req.params.id;
-    const userId = req.auth.userId;
+    const userId = req.dbUser._id;
 
     // ✅ Check if post exists
     const post = await Post.findById(postId);
@@ -100,10 +104,12 @@ const deleteLike = async (req, res) => {
   }
 };
 
+// TODO ====================== getAllLikes ======================   //
+
 const getAllLikes = async (req, res) => {
   const postId = req.params.id;
   const likes = await Like.find({ postId }).populate("userId", "name email");
-  if (!likes) {
+  if (likes.length === 0) {
     return res.status(404).json({ message: "No likes found for this post" });
   }
   res.status(200).json({

@@ -2,11 +2,12 @@ import { Comment } from "../models/comment.models.js";
 import { Post } from "../models/post.models.js";
 
 // TODO ==================== Create Comment ====================
+
 const createComment = async (req, res) => {
   try {
     const { message, parentId } = req.body;
     const postId = req.params.id;
-    const userId = req.auth.userId; // updated for Clerk
+    const userId = req.dbUser._id; // instead of req.auth.userId
 
     // ✅ Validation
     if (!postId) {
@@ -20,7 +21,7 @@ const createComment = async (req, res) => {
         .json({ success: false, error: "Message is required" });
     }
 
-    // ✅ Check if post exists
+    //**  ✅ Check if post exists **//
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ success: false, error: "Post not found" });
@@ -32,7 +33,7 @@ const createComment = async (req, res) => {
         .json({ success: false, error: "Comment already exists" });
     }
 
-    // ✅ Create new comment
+    //**  ✅ Create new comment **//
     const newComment = new Comment({
       postId,
       userId,
@@ -42,11 +43,11 @@ const createComment = async (req, res) => {
 
     await newComment.save();
 
-    // ✅ Update post’s comment count
+    //**  ✅ Update post’s comment count **//
     post.commentCount = (post.commentCount || 0) + 1;
     await post.save();
 
-    // ✅ Send response
+    //**  ✅ Send response **//
     return res.status(201).json({
       success: true,
       message: "Comment added successfully",
@@ -62,6 +63,7 @@ const createComment = async (req, res) => {
 };
 
 // TODO ==================== Get Comments ====================
+
 const getComments = async (req, res) => {
   try {
     const postId = req.params.id;
@@ -103,10 +105,11 @@ const getComments = async (req, res) => {
 };
 
 // TODO ==================== Delete Comment (Soft Delete) ====================
+
 const deleteComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.auth.userId; // updated for Clerk
+    const userId = req.dbUser._id; // updated for Clerk
 
     if (!commentId) {
       return res
@@ -149,14 +152,15 @@ const deleteComment = async (req, res) => {
   }
 };
 
-// TODO ==================== Update Comment ====================
+// TODO ==================== Update Comment ==================== //
+
 const updateComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.auth.userId; // updated for Clerk
+    const userId = req.dbUser._id; // updated for Clerk
     const { message } = req.body;
 
-    // ✅ Validate inputs
+    //* ✅ Validate inputs *//
     if (!commentId) {
       return res
         .status(400)

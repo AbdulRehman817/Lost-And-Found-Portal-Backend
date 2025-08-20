@@ -1,16 +1,17 @@
 import express from "express";
 import {
   getUserProfile,
-  updateUserId,
+  updateUserProfile,
 } from "../controllers/user.controllers.js";
 import { requireAuth } from "@clerk/express";
+import { ensureUser } from "../middleware/ensureUser.js";
 
 const router = express.Router();
 
-// Clerk handles register/login/logout via its SDK on the frontend
-// You only keep protected endpoints in your backend
+//**  Clerk handles register/login/logout via its SDK on the frontend */
+//**  You only keep protected endpoints in your backend  */
 
-router.get("/profile", requireAuth, getUserProfile);
-router.put("/profile", requireAuth, updateUserId);
+router.get("/profile", requireAuth, ensureUser, getUserProfile);
+router.put("/profile", requireAuth, ensureUser, updateUserProfile);
 
 export default router;

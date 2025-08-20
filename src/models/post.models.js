@@ -5,6 +5,7 @@ const postSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     title: {
       type: String,
@@ -33,10 +34,12 @@ const postSchema = new mongoose.Schema(
     },
     commentCount: {
       type: Number,
-      status: {
-        type: String,
-        enum: ["active", "inactive"],
-      },
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {
