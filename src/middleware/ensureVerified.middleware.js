@@ -1,19 +1,33 @@
 // middlewares/isVerified.js
+
+/**
+ * Middleware: isVerified
+ * -----------------------
+ * Ensures that the user attached to the request (via ensureUser middleware)
+ * has verified their email. Protects routes from unverified users.
+ *
+ * Usage:
+ *  - ensureUser must run before this middleware to attach req.dbUser
+ *  - Use on any route that requires email verification
+ */
 export const isVerified = (req, res, next) => {
   try {
-    const user = req.dbUser; // ensureUser must run before this
+    // 🔗 Get the MongoDB user from the request
+    const user = req.dbUser; // ensureUser middleware must have run before this
 
+    // ❌ If user not found (shouldn't normally happen)
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    // ❌ Check if user has verified their email
     if (!user.isVerified) {
       return res.status(403).json({
         message: "Your email is not verified. Please verify to proceed.",
       });
     }
 
-    // ✅ User is verified, allow access
+    // ✅ User exists and is verified — allow access to the route
     next();
   } catch (error) {
     console.error("Error in isVerified middleware:", error);
