@@ -4,12 +4,20 @@ import { generateOtp } from "../utils/otp.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ================== Send OTP ================== //
+// TODO ================== Send OTP ================== //
 const sendOtp = async (req, res) => {
   try {
     const user = req.dbUser; // from ensureUser
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const otp = generateOtp();
+    // ✅ Prevent spamming: only allow OTP request every 1 minute
+    if (user.otpExpiry && user.otpExpiry > Date.now() - 60 * 1000) {
+      return res.status(429).json({
+        message: "Please wait a minute before requesting a new OTP",
+      });
+    }
+
+    const otp = generateOtp(); // usually 6-digit code
     user.otp = otp;
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
     await user.save();
@@ -28,7 +36,7 @@ const sendOtp = async (req, res) => {
   }
 };
 
-// ================== Verify OTP ================== //
+// TODO ================== Verify OTP ================== //
 const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
@@ -38,7 +46,7 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP expired or not generated" });
     }
 
-    if (user.otp !== otp) {
+    if (user.otp !== otp.trim()) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
