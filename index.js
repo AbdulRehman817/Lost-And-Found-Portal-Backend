@@ -13,7 +13,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 const app = express();
 let corsOptions = {
-  origin: "https://e-commerce-website-react-js-gules.vercel.app",
+  origin: "https://localhost:3000",
   optionSuccessStatus: 200,
 };
 

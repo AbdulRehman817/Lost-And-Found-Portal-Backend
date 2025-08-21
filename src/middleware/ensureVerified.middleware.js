@@ -10,7 +10,7 @@
  *  - ensureUser must run before this middleware to attach req.dbUser
  *  - Use on any route that requires email verification
  */
-export const isVerified = (req, res, next) => {
+export const ensureVerified = (req, res, next) => {
   try {
     // 🔗 Get the MongoDB user from the request
     const user = req.dbUser; // ensureUser middleware must have run before this
