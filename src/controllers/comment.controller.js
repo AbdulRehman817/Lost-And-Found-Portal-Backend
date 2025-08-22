@@ -76,13 +76,20 @@ const getComments = async (req, res) => {
     if (!post) {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
-    const comments = await Comment.find({ postId })
+    const comments = await Comment.find({
+      postId,
+      parentId: null,
+      isDeleted: false,
+    })
       .populate("userId", "name email avatar")
       .sort({ createdAt: -1 });
 
     const commentsWithReplies = await Promise.all(
       comments.map(async (comment) => {
-        const replies = await Comment.find({ parentId: comment._id })
+        const replies = await Comment.find({
+          parentId: comment._id,
+          isDeleted: false,
+        })
           .populate("userId", "name email avatar")
           .sort({ createdAt: 1 }); // oldest first in thread
 

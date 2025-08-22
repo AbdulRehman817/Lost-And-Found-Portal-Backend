@@ -7,30 +7,43 @@ import {
 } from "../controllers/comment.controller.js";
 import { requireAuth } from "@clerk/express";
 import { ensureVerified } from "../middleware/ensureVerified.middleware.js";
+import { ensureUser } from "../middleware/ensureUser.js";
 
 const router = express.Router();
 
-// TODO ----------------- Comments Routes -----------------
-
-//! Create comment for a post
+// ✅ Create comment for a post
 router.post(
   "/posts/:postId/comments",
-  ensureVerified,
   requireAuth,
+  ensureUser,
+  ensureVerified,
   createComment
 );
 
-//! Get all comments for a post
-router.get("/posts/:postId/comments", ensureVerified, getComments);
+// ✅ Get all comments for a post
+router.get(
+  "/posts/:postId/comments",
+  requireAuth,
+  ensureUser,
+  ensureVerified,
+  getComments
+);
 
-//! Update a specific comment
-router.put("/comments/:commentId", ensureVerified, requireAuth, updateComment);
+// ✅ Update a specific comment
+router.put(
+  "/comments/:commentId",
+  requireAuth,
+  ensureUser,
+  ensureVerified,
+  updateComment
+);
 
-//! Delete a specific comment
+// ✅ Delete a specific comment
 router.delete(
   "/comments/:commentId",
-  ensureVerified,
   requireAuth,
+  ensureUser,
+  ensureVerified,
   deleteComment
 );
 

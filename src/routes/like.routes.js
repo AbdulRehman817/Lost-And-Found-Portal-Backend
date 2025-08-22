@@ -10,10 +10,12 @@ import { ensureVerified } from "../middleware/ensureVerified.middleware.js";
 const router = express.Router();
 
 // ✅ Like a post
-router.post("/like/:id", ensureVerified, requireAuth, createLike);
+router.post("/like/:id", requireAuth, ensureVerified, createLike);
 
 // ✅ Unlike a post
-router.delete("/like/:id", ensureVerified, requireAuth, deleteLike);
-router.get("/like/:id", ensureVerified, requireAuth, getAllLikes);
+router.delete("/like/:id", requireAuth, ensureVerified, deleteLike);
+
+// ✅ Get all likes for a post (PROTECTED: optional)
+router.get("/like/:id", requireAuth, ensureVerified, getAllLikes);
 
 export default router;

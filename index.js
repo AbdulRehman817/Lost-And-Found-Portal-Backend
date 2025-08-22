@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import connectDB from "./src/db/index.js";
-import { clerkMiddleware } from "@clerk/express";
+
 import postRoute from "./src/routes/post.routes.js";
 import userRoute from "./src/routes/user.routes.js";
 import commentRoute from "./src/routes/comment.routes.js";
@@ -30,7 +30,6 @@ app.use("/api/v1", postRoute);
 app.use("/api/v1", commentRoute);
 app.use("/api/v1", likeRoute);
 app.use("/api/v1", otpRoute);
-app.use(clerkMiddleware());
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {

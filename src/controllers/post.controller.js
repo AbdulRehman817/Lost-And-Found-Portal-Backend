@@ -36,11 +36,11 @@ const createPost = async (req, res) => {
     const newPost = await Post.create({
       userId: req.dbUser._id, // ✅ from ensureUser
       title,
-      type,
+      type: type.toLowerCase(),
       description,
       category,
       location,
-      imageUrl: imageUrl,
+      imageUrl,
     });
 
     return res.status(201).json({
@@ -114,12 +114,12 @@ const updatePost = async (req, res) => {
     }
 
     // Update fields
-    post.title = title || post.title;
-    post.type = type || post.type;
-    post.description = description || post.description;
-    post.category = category || post.category;
-    post.location = location || post.location;
-    post.image = imageUrl || post.image;
+    if (title) post.title = title;
+    if (type) post.type = type.toLowerCase();
+    if (description) post.description = description;
+    if (category) post.category = category;
+    if (location) post.location = location;
+    if (imageUrl) post.imageUrl = imageUrl; // fix here (your schema field is imageUrl)
 
     await post.save();
 
