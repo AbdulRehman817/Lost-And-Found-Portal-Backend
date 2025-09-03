@@ -1,6 +1,6 @@
 // controllers/userController.js
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import { User } from "../models/user.models";
+import { User } from "../models/user.models.js";
 
 // Get User Profile
 const getUserProfile = async (req, res) => {
