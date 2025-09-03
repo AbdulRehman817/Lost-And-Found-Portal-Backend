@@ -1,10 +1,13 @@
+// controllers/postController.js
 import { Post } from "../models/post.models.js";
 import { uploadImageToImageKit } from "../utils/imageKit.js";
+import { User } from "../models/User.js";
 
 // ====================== createPost ====================== //
 const createPost = async (req, res) => {
   try {
     const { title, type, description, category, location } = req.body;
+    const { userId } = req.auth; // Clerk's user ID
 
     // 1. Validate required fields
     if (!title || !type || !description || !category || !location) {
@@ -32,9 +35,15 @@ const createPost = async (req, res) => {
       return res.status(500).json({ message: "Image upload failed" });
     }
 
-    // 4. Create post with MongoDB User._id
+    // 4. Find MongoDB user
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 5. Create post
     const newPost = await Post.create({
-      userId: req.dbUser._id, // ✅ from ensureUser
+      userId: dbUser._id,
       title,
       type: type.toLowerCase(),
       description,
@@ -69,7 +78,7 @@ const getAllPosts = async (req, res) => {
     if (location) filter.location = { $regex: location, $options: "i" };
 
     const posts = await Post.find(filter)
-      .populate("userId", "name email") // ✅ fixed fields
+      .populate("userId", "name email") // shows author info
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -90,6 +99,7 @@ const getAllPosts = async (req, res) => {
 const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.auth;
     const { title, type, description, category, location, imageUrl } = req.body;
 
     const post = await Post.findById(id);
@@ -99,8 +109,9 @@ const updatePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    // ✅ Ownership check with MongoDB User._id
-    if (post.userId.toString() !== req.dbUser._id.toString()) {
+    // ✅ Ownership check with Clerk user
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser || post.userId.toString() !== dbUser._id.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });
@@ -119,7 +130,7 @@ const updatePost = async (req, res) => {
     if (description) post.description = description;
     if (category) post.category = category;
     if (location) post.location = location;
-    if (imageUrl) post.imageUrl = imageUrl; // fix here (your schema field is imageUrl)
+    if (imageUrl) post.imageUrl = imageUrl;
 
     await post.save();
 
@@ -141,6 +152,7 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.auth;
 
     const post = await Post.findById(id);
     if (!post) {
@@ -149,8 +161,9 @@ const deletePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    // ✅ Ownership check
-    if (post.userId.toString() !== req.dbUser._id.toString()) {
+    // ✅ Ownership check with Clerk user
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser || post.userId.toString() !== dbUser._id.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });
