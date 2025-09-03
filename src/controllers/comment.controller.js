@@ -145,12 +145,10 @@ const deleteComment = async (req, res) => {
     }
 
     if (comment.userId.toString() !== dbUser._id.toString()) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Not authorized to delete this comment",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to delete this comment",
+      });
     }
 
     comment.isDeleted = true;
@@ -203,12 +201,10 @@ const updateComment = async (req, res) => {
     }
 
     if (comment.userId.toString() !== dbUser._id.toString()) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Not authorized to update this comment",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to update this comment",
+      });
     }
 
     comment.message = message;

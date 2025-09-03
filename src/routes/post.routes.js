@@ -6,42 +6,25 @@ import {
   deletePost,
 } from "../controllers/post.controller.js";
 import { requireAuth } from "@clerk/express";
-import { ensureUser } from "../middleware/ensureUser.js";
-import { ensureVerified } from "../middleware/ensureVerified.middleware.js";
 import { upload } from "../middleware/user.multer.js";
 
 const router = express.Router();
 
-// 🔐 Create a post (auth + user + verified email required)
-router.post(
-  "/createPost",
-  requireAuth,
-  ensureUser,
-  ensureVerified,
-  upload.single("image"),
-  createPost
-);
+// 🔐 Create a post (auth required)
+router.post("/createPost", requireAuth(), upload.single("image"), createPost);
 
 // 🌐 Public route - get all posts
 router.get("/getAllPosts", getAllPosts);
 
-// 🔐 Update a post (auth + user + verified)
+// 🔐 Update a post (auth required)
 router.put(
   "/updatePost/:id",
-  requireAuth,
-  ensureUser,
-  ensureVerified,
+  requireAuth(),
   upload.single("image"),
   updatePost
 );
 
-// 🔐 Delete a post (auth + user + verified)
-router.delete(
-  "/deletePost/:id",
-  requireAuth,
-  ensureUser,
-  ensureVerified,
-  deletePost
-);
+// 🔐 Delete a post (auth required)
+router.delete("/deletePost/:id", requireAuth(), deletePost);
 
 export default router;

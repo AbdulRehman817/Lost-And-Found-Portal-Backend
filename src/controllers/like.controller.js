@@ -1,7 +1,7 @@
 // controllers/likeController.js
 import { Like } from "../models/like.models.js";
 import { Post } from "../models/post.models.js";
-import { User } from "../models/User.js";
+import { User } from "../models/user.models.js";
 
 // ====================== createLike ====================== //
 const createLike = async (req, res) => {
@@ -40,7 +40,11 @@ const createLike = async (req, res) => {
     }
 
     // Create new like
-    const newLike = await Like.create({ postId, userId: dbUser._id, isLiked: true });
+    const newLike = await Like.create({
+      postId,
+      userId: dbUser._id,
+      isLiked: true,
+    });
 
     post.likeCount = (post.likeCount || 0) + 1;
     await post.save();
@@ -74,7 +78,9 @@ const deleteLike = async (req, res) => {
 
     const existingLike = await Like.findOne({ postId, userId: dbUser._id });
     if (!existingLike || !existingLike.isLiked) {
-      return res.status(400).json({ message: "You haven't liked this post yet" });
+      return res
+        .status(400)
+        .json({ message: "You haven't liked this post yet" });
     }
 
     existingLike.isLiked = false;

@@ -5,17 +5,16 @@ import {
   getAllLikes,
 } from "../controllers/like.controller.js";
 import { requireAuth } from "@clerk/express";
-import { ensureVerified } from "../middleware/ensureVerified.middleware.js";
 
 const router = express.Router();
 
 // ✅ Like a post
-router.post("/like/:id", requireAuth, ensureVerified, createLike);
+router.post("/like/:id", requireAuth, createLike);
 
 // ✅ Unlike a post
-router.delete("/like/:id", requireAuth, ensureVerified, deleteLike);
+router.delete("/like/:id", requireAuth, deleteLike);
 
 // ✅ Get all likes for a post (PROTECTED: optional)
-router.get("/like/:id", requireAuth, ensureVerified, getAllLikes);
+router.get("/like/:id", requireAuth, getAllLikes);
 
 export default router;

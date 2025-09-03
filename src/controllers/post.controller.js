@@ -1,7 +1,7 @@
 // controllers/postController.js
 import { Post } from "../models/post.models.js";
-import { uploadImageToImageKit } from "../utils/imageKit.js";
-import { User } from "../models/User.js";
+import uploadImageToImageKit from "../utils/imageKit.js";
+import { User } from "../models/user.models.js";
 
 // ====================== createPost ====================== //
 const createPost = async (req, res) => {
