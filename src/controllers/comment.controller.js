@@ -1,53 +1,65 @@
 import { Comment } from "../models/comment.models.js";
 import { Post } from "../models/post.models.js";
+import { User } from "../models/user.models.js";
 
-// TODO ==================== Create Comment ====================
+// ✅ Helper: get MongoDB user from Clerk
+const getDbUser = async (clerkId) => {
+  return await User.findOne({ clerkId });
+};
+
+// ==================== Create Comment ====================
 
 const createComment = async (req, res) => {
   try {
     const { message, parentId } = req.body;
     const postId = req.params.id;
-    const userId = req.dbUser._id; // instead of req.auth.userId
+    const clerkId = req.auth.userId;
 
-    // ✅ Validation
-    if (!postId) {
+    if (!postId)
       return res
         .status(400)
         .json({ success: false, error: "Post ID is required" });
-    }
     if (!message || message.trim().length === 0) {
       return res
         .status(400)
         .json({ success: false, error: "Message is required" });
     }
 
-    //**  ✅ Check if post exists **//
+    // ✅ Get MongoDB user
+    const dbUser = await getDbUser(clerkId);
+    if (!dbUser)
+      return res.status(401).json({ success: false, error: "User not found" });
+
+    // ✅ Check if post exists
     const post = await Post.findById(postId);
-    if (!post) {
+    if (!post)
       return res.status(404).json({ success: false, error: "Post not found" });
-    }
-    const existingComment = await Comment.findOne({ postId, userId, message });
+
+    // ✅ Prevent duplicate
+    const existingComment = await Comment.findOne({
+      postId,
+      userId: dbUser._id,
+      message,
+    });
     if (existingComment) {
       return res
         .status(400)
         .json({ success: false, error: "Comment already exists" });
     }
 
-    //**  ✅ Create new comment **//
+    // ✅ Create comment
     const newComment = new Comment({
       postId,
-      userId,
+      userId: dbUser._id,
       message,
       parentId: parentId || null,
     });
-
     await newComment.save();
 
-    //**  ✅ Update post’s comment count **//
+    // ✅ Update comment count
     post.commentCount = (post.commentCount || 0) + 1;
     await post.save();
 
-    //**  ✅ Send response **//
     return res.status(201).json({
       success: true,
       message: "Comment added successfully",
@@ -55,33 +67,32 @@ const createComment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating comment:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server error. Please try again later.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, error: "Server error. Please try again later." });
   }
 };
 
-// TODO ==================== Get Comments ====================
+// ==================== Get Comments ====================
 
 const getComments = async (req, res) => {
   try {
     const postId = req.params.id;
-    if (!postId) {
+    if (!postId)
       return res
         .status(400)
         .json({ success: false, error: "Post ID is required" });
-    }
+
     const post = await Post.findById(postId);
-    if (!post) {
+    if (!post)
       return res.status(404).json({ success: false, error: "Post not found" });
-    }
+
     const comments = await Comment.find({
       postId,
       parentId: null,
       isDeleted: false,
     })
-      .populate("userId", "name email avatar")
+      .populate("userId", "name email")
       .sort({ createdAt: -1 });
 
     const commentsWithReplies = await Promise.all(
@@ -90,8 +101,8 @@ const getComments = async (req, res) => {
           parentId: comment._id,
           isDeleted: false,
         })
-          .populate("userId", "name email avatar")
-          .sort({ createdAt: 1 }); // oldest first in thread
+          .populate("userId", "name email")
+          .sort({ createdAt: 1 });
 
         return { ...comment._doc, replies };
       })
@@ -104,25 +115,28 @@ const getComments = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching comments:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server error. Please try again later.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, error: "Server error. Please try again later." });
   }
 };
 
-// TODO ==================== Delete Comment (Soft Delete) ====================
+// ==================== Delete Comment ====================
 
 const deleteComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.dbUser._id; // updated for Clerk
+    const clerkId = req.auth.userId;
 
-    if (!commentId) {
+    if (!commentId)
       return res
         .status(400)
         .json({ success: false, error: "Comment ID is required" });
-    }
+
+    const dbUser = await getDbUser(clerkId);
+    if (!dbUser)
+      return res.status(401).json({ success: false, error: "User not found" });
+
     const comment = await Comment.findById(commentId);
     if (!comment || comment.isDeleted) {
       return res
@@ -130,56 +144,57 @@ const deleteComment = async (req, res) => {
         .json({ success: false, error: "Comment not found" });
     }
 
-    if (comment.userId.toString() !== userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        error: "You are not authorized to delete this comment",
-      });
+    if (comment.userId.toString() !== dbUser._id.toString()) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: "Not authorized to delete this comment",
+        });
     }
+
     comment.isDeleted = true;
     await comment.save();
 
-    // ✅ Update post's comment count
     const post = await Post.findById(comment.postId);
     if (post && post.commentCount > 0) {
       post.commentCount -= 1;
       await post.save();
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Comment deleted successfully",
-    });
+    return res
+      .status(200)
+      .json({ success: true, message: "Comment deleted successfully" });
   } catch (error) {
     console.error("Error deleting comment:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server error. Please try again later.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, error: "Server error. Please try again later." });
   }
 };
 
-// TODO ==================== Update Comment ==================== //
+// ==================== Update Comment ====================
 
 const updateComment = async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = req.dbUser._id; // updated for Clerk
     const { message } = req.body;
+    const clerkId = req.auth.userId;
 
-    //* ✅ Validate inputs *//
-    if (!commentId) {
+    if (!commentId)
       return res
         .status(400)
         .json({ success: false, error: "Comment ID is required" });
-    }
     if (!message || message.trim().length === 0) {
       return res
         .status(400)
         .json({ success: false, error: "Message is required" });
     }
 
-    // ✅ Find comment
+    const dbUser = await getDbUser(clerkId);
+    if (!dbUser)
+      return res.status(401).json({ success: false, error: "User not found" });
+
     const comment = await Comment.findById(commentId);
     if (!comment || comment.isDeleted) {
       return res
@@ -187,15 +202,15 @@ const updateComment = async (req, res) => {
         .json({ success: false, error: "Comment not found" });
     }
 
-    // ✅ Check ownership
-    if (comment.userId.toString() !== userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        error: "You are not authorized to update this comment",
-      });
+    if (comment.userId.toString() !== dbUser._id.toString()) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: "Not authorized to update this comment",
+        });
     }
 
-    // ✅ Update message
     comment.message = message;
     await comment.save();
 
@@ -206,10 +221,9 @@ const updateComment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating comment:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server error. Please try again later.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, error: "Server error. Please try again later." });
   }
 };
 
