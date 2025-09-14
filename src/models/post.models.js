@@ -16,13 +16,12 @@ const postSchema = new mongoose.Schema(
       enum: ["lost", "found"],
       required: true,
     },
-<<<<<<< HEAD
+
     tags: {
       type: [String],
       default: [],
     },
-=======
->>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
+
     description: {
       type: String,
       required: true,

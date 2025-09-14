@@ -22,11 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.1",
     "multer": "^2.0.2",
-<<<<<<< HEAD
     "resend": "^6.0.1",
     "svix": "^1.76.0"
-=======
-    "resend": "^6.0.1"
->>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
   }
 }
