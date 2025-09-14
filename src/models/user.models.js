@@ -11,10 +11,13 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true, // Clerk’s unique ID for every user
     },
+<<<<<<< HEAD
     profileImage: {
       type: String,
       default: "",
     },
+=======
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     email: {
       type: String,
       required: true,

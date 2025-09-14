@@ -12,14 +12,20 @@ const getDbUser = async (clerkId) => {
 const createComment = async (req, res) => {
   try {
     const { message, parentId } = req.body;
+<<<<<<< HEAD
     const postId = req.params.postId;
     const userId = req.auth().userId; // Clerk userId
     console.log("Clerk userId:", userId);
+=======
+    const postId = req.params.id;
+    const clerkId = req.auth.userId;
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 
     if (!postId)
       return res
         .status(400)
         .json({ success: false, error: "Post ID is required" });
+<<<<<<< HEAD
     if (!message?.trim())
       return res
         .status(400)
@@ -32,10 +38,25 @@ const createComment = async (req, res) => {
       return res.status(404).json({ success: false, error: "User not found" });
 
     // ✅ Ensure post exists
+=======
+    if (!message || message.trim().length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Message is required" });
+    }
+
+    // ✅ Get MongoDB user
+    const dbUser = await getDbUser(clerkId);
+    if (!dbUser)
+      return res.status(401).json({ success: false, error: "User not found" });
+
+    // ✅ Check if post exists
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     const post = await Post.findById(postId);
     if (!post)
       return res.status(404).json({ success: false, error: "Post not found" });
 
+<<<<<<< HEAD
     // ✅ Save comment with userId
     const newComment = await Comment.create({
       postId,
@@ -62,6 +83,41 @@ const createComment = async (req, res) => {
   } catch (error) {
     console.error("Error creating comment:", error);
     res
+=======
+    // ✅ Prevent duplicate
+    const existingComment = await Comment.findOne({
+      postId,
+      userId: dbUser._id,
+      message,
+    });
+    if (existingComment) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Comment already exists" });
+    }
+
+    // ✅ Create comment
+    const newComment = new Comment({
+      postId,
+      userId: dbUser._id,
+      message,
+      parentId: parentId || null,
+    });
+    await newComment.save();
+
+    // ✅ Update comment count
+    post.commentCount = (post.commentCount || 0) + 1;
+    await post.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      data: newComment,
+    });
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    return res
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
       .status(500)
       .json({ success: false, error: "Server error. Please try again later." });
   }
@@ -69,10 +125,16 @@ const createComment = async (req, res) => {
 
 // ==================== Get Comments ====================
 
+<<<<<<< HEAD
 // ==================== Get Comments ====================
 const getComments = async (req, res) => {
   try {
     const postId = req.params.postId; // ✅ Changed from req.params.id to req.params.postId
+=======
+const getComments = async (req, res) => {
+  try {
+    const postId = req.params.id;
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     if (!postId)
       return res
         .status(400)
@@ -84,6 +146,7 @@ const getComments = async (req, res) => {
 
     const comments = await Comment.find({
       postId,
+<<<<<<< HEAD
       parentId: null, // ✅ Only get parent comments
       isDeleted: { $ne: true }, // ✅ Exclude deleted comments
     })
@@ -92,13 +155,27 @@ const getComments = async (req, res) => {
 
     console.log("comments", comments);
 
+=======
+      parentId: null,
+      isDeleted: false,
+    })
+      .populate("userId", "name email")
+      .sort({ createdAt: -1 });
+
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     const commentsWithReplies = await Promise.all(
       comments.map(async (comment) => {
         const replies = await Comment.find({
           parentId: comment._id,
+<<<<<<< HEAD
           isDeleted: { $ne: true }, // ✅ Also exclude deleted replies
         })
           .populate("userId", "name email profileImage")
+=======
+          isDeleted: false,
+        })
+          .populate("userId", "name email")
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
           .sort({ createdAt: 1 });
 
         return { ...comment._doc, replies };
@@ -112,11 +189,19 @@ const getComments = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching comments:", error);
+<<<<<<< HEAD
     res
+=======
+    return res
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
       .status(500)
       .json({ success: false, error: "Server error. Please try again later." });
   }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 // ==================== Delete Comment ====================
 
 const deleteComment = async (req, res) => {

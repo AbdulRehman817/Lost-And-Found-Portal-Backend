@@ -2,19 +2,50 @@
 import { Post } from "../models/post.models.js";
 import { uploadImageToImageKit } from "../utils/imageKit.js";
 import { User } from "../models/user.models.js";
+<<<<<<< HEAD
 import mongoose from "mongoose";
+=======
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 
 // ====================== createPost ====================== //
 const createPost = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { title, description, category, tags, location, type, name, email } =
       req.body;
     const userId = req.auth().userId; // Clerk userId
     console.log(userId);
+=======
+    const { title, type, description, category, location } = req.body;
+    const { userId } = req.auth; // Clerk's user ID
+
+    // 1. Validate required fields
+    if (!title || !type || !description || !category || !location) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    // 2. Validate "type"
+    if (!["lost", "found"].includes(type.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Type must be either 'lost' or 'found'",
+      });
+    }
+
+    // 3. Validate image
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file uploaded" });
+    }
+
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     const imageUrl = await uploadImageToImageKit(req.file.path);
     if (!imageUrl) {
       return res.status(500).json({ message: "Image upload failed" });
     }
+<<<<<<< HEAD
     // find user in Mongo by Clerk ID
     const user = await User.findOne({ clerkId: userId });
     console.log("name", user);
@@ -43,16 +74,63 @@ const createPost = async (req, res) => {
   } catch (error) {
     console.error("❌ Error creating post:", error);
     res.status(500).json({ message: error.message });
+=======
+
+    // 4. Find MongoDB user
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 5. Create post
+    const newPost = await Post.create({
+      userId: dbUser._id,
+      title,
+      type: type.toLowerCase(),
+      description,
+      category,
+      location,
+      imageUrl,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Post created successfully",
+      data: newPost,
+    });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
   }
 };
 
 // ====================== getAllPosts ====================== //
+<<<<<<< HEAD
 // ====================== getAllPosts ====================== //
 const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
       .populate("userId", "name email") // populate author info
       .sort({ createdAt: -1 }); // newest posts first
+=======
+const getAllPosts = async (req, res) => {
+  try {
+    const { type, category, location } = req.query;
+
+    // Dynamic filter
+    let filter = {};
+    if (type) filter.type = type.toLowerCase();
+    if (category) filter.category = category.toLowerCase();
+    if (location) filter.location = { $regex: location, $options: "i" };
+
+    const posts = await Post.find(filter)
+      .populate("userId", "name email") // shows author info
+      .sort({ createdAt: -1 });
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 
     return res.status(200).json({
       success: true,
@@ -68,6 +146,7 @@ const getAllPosts = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 const getSinglePost = async (req, res) => {
   try {
     const { id } = req.params; // get post ID
@@ -98,13 +177,19 @@ const getSinglePost = async (req, res) => {
   }
 };
 
+=======
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 // ====================== updatePost ====================== //
 const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.auth;
+<<<<<<< HEAD
     const { title, type, description, tags, category, location, imageUrl } =
       req.body;
+=======
+    const { title, type, description, category, location, imageUrl } = req.body;
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 
     const post = await Post.findById(id);
     if (!post) {
@@ -135,7 +220,10 @@ const updatePost = async (req, res) => {
     if (category) post.category = category;
     if (location) post.location = location;
     if (imageUrl) post.imageUrl = imageUrl;
+<<<<<<< HEAD
     if (tags) post.tags = tags;
+=======
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 
     await post.save();
 
@@ -189,4 +277,8 @@ const deletePost = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 export { createPost, getAllPosts, updatePost, deletePost, getSinglePost };
+=======
+export { createPost, getAllPosts, updatePost, deletePost };
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c

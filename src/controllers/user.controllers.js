@@ -2,6 +2,7 @@
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { User } from "../models/user.models.js";
 
+<<<<<<< HEAD
 // ✅ Middleware: Sync Clerk user into MongoDB if not exists
 const syncClerkUser = async (req, res, next) => {
   try {
@@ -58,11 +59,29 @@ const getUserProfile = async (req, res) => {
         name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
         email: clerkUser.emailAddresses[0]?.emailAddress || "",
         profileImage: clerkUser.imageUrl || "",
+=======
+// Get User Profile
+const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.auth; // Clerk middleware injects this
+    const clerkUser = await clerkClient.users.getUser(userId);
+
+    // Check in MongoDB
+    let dbUser = await User.findOne({ clerkId: userId });
+
+    // If not found, create in DB
+    if (!dbUser) {
+      dbUser = await User.create({
+        clerkId: userId,
+        name: clerkUser.firstName || "",
+        email: clerkUser.emailAddresses[0]?.emailAddress || "",
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
         isVerified:
           clerkUser.emailAddresses[0]?.verification?.status === "verified",
       });
     }
 
+<<<<<<< HEAD
     const initials = dbUser.name
       ? dbUser.name.charAt(0).toUpperCase()
       : dbUser.email.charAt(0).toUpperCase();
@@ -73,6 +92,11 @@ const getUserProfile = async (req, res) => {
         ...dbUser.toObject(),
         initials,
       },
+=======
+    return res.status(200).json({
+      message: "User profile fetched successfully",
+      data: dbUser,
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     });
   } catch (error) {
     console.error("❌ Error fetching user profile:", error);
@@ -80,18 +104,30 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // ✅ Update User Profile
+=======
+// Update User Profile
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
 const updateUserProfile = async (req, res) => {
   try {
     const { userId } = req.auth;
     const { name, bio } = req.body;
 
     let dbUser = await User.findOne({ clerkId: userId });
+<<<<<<< HEAD
+=======
+
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     if (!dbUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
+<<<<<<< HEAD
     // Update MongoDB user
+=======
+    // Update fields in MongoDB
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
     dbUser.name = name || dbUser.name;
     dbUser.bio = bio || dbUser.bio;
 
@@ -107,4 +143,8 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 export { getUserProfile, updateUserProfile, syncClerkUser };
+=======
+export { getUserProfile, updateUserProfile };
+>>>>>>> c98c04b94a323ab741b146da6f3eb122c98e203c
