@@ -10,66 +10,60 @@ const getDbUser = async (clerkId) => {
 // ==================== Create Comment ====================
 
 const createComment = async (req, res) => {
- 
-    const { message, parentId } = req.body;
+  const { message, parentId } = req.body;
 
-    const postId = req.params.postId;
-    const userId = req.auth().userId; // Clerk userId
-    console.log("Clerk userId:", userId);
+  const postId = req.params.postId;
+  const userId = req.auth().userId; // Clerk userId
+  console.log("Clerk userId:", userId);
 
+  if (!postId)
+    return res
+      .status(400)
+      .json({ success: false, error: "Post ID is required" });
+  if (!message?.trim())
+    return res
+      .status(400)
+      .json({ success: false, error: "Message is required" });
 
-    if (!postId)
-      return res
-        .status(400)
-        .json({ success: false, error: "Post ID is required" });
-    if (!message?.trim())
-      return res
-        .status(400)
-        .json({ success: false, error: "Message is required" });
+  // ✅ Find Mongo user by ClerkId
+  const user = await User.findOne({ clerkId: userId });
+  console.log("Found user:", user); // Debug log
+  if (!user)
+    return res.status(404).json({ success: false, error: "User not found" });
 
-    // ✅ Find Mongo user by ClerkId
-    const user = await User.findOne({ clerkId: userId });
-    console.log("Found user:", user); // Debug log
-    if (!user)
-      return res.status(404).json({ success: false, error: "User not found" });
+  // ✅ Ensure post exists
+  const post = await Post.findById(postId);
+  if (!post)
+    return res.status(404).json({ success: false, error: "Post not found" });
 
-    // ✅ Ensure post exists
-    const post = await Post.findById(postId);
-    if (!post)
-      return res.status(404).json({ success: false, error: "Post not found" });
+  // ✅ Save comment with userId
+  const newComment = await Comment.create({
+    postId,
+    userId: user._id,
+    message,
+    parentId: parentId || null,
+  });
+  console.log("✅ Comment saved to DB:", newComment); // Add this line
+  // ✅ Increment post commentCount
+  post.commentCount = (post.commentCount || 0) + 1;
+  await post.save();
 
+  // ✅ Return with populated user (name + email + profileImage)
+  const populated = await newComment.populate(
+    "userId",
+    "name email profileImage"
+  );
 
-    // ✅ Save comment with userId
-    const newComment = await Comment.create({
-      postId,
-      userId: user._id,
-      message,
-      parentId: parentId || null,
-    });
-    console.log("✅ Comment saved to DB:", newComment); // Add this line
-    // ✅ Increment post commentCount
-    post.commentCount = (post.commentCount || 0) + 1;
-    await post.save();
+  return res.status(201).json({
+    success: true,
+    message: "Comment added successfully",
+    data: populated,
+  });
+};
 
-    // ✅ Return with populated user (name + email + profileImage)
-    const populated = await newComment.populate(
-      "userId",
-      "name email profileImage"
-    );
+// ✅ Prevent duplicate
 
-    return res.status(201).json({
-      success: true,
-      message: "Comment added successfully",
-      data: populated,
-    });
-  } 
-
-    // ✅ Prevent duplicate
-   
-
-    // ✅ Update comment count
-   
-
+// ✅ Update comment count
 
 // ==================== Get Comments ====================
 

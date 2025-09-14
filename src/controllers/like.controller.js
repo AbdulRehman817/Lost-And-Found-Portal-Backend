@@ -6,25 +6,34 @@ import { User } from "../models/user.models.js";
 // ====================== createLike ====================== //
 const createLike = async (req, res) => {
   try {
-    const postId = req.params.id;
+    const postId = req.params.postId;
     const { userId } = req.auth; // Clerk user ID
 
     // Find MongoDB user
     const dbUser = await User.findOne({ clerkId: userId });
     if (!dbUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     const post = await Post.findById(postId);
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
     }
 
     let existingLike = await Like.findOne({ postId, userId: dbUser._id });
 
     if (existingLike) {
       if (existingLike.isLiked) {
-        return res.status(400).json({ message: "You already liked this post" });
+        return res.status(400).json({
+          success: false,
+          message: "You already liked this post",
+        });
       }
 
       existingLike.isLiked = true;
@@ -34,8 +43,10 @@ const createLike = async (req, res) => {
       await post.save();
 
       return res.status(200).json({
+        success: true,
         message: "Post liked again",
         like: existingLike,
+        likeCount: post.likeCount,
       });
     }
 
@@ -50,37 +61,49 @@ const createLike = async (req, res) => {
     await post.save();
 
     return res.status(201).json({
+      success: true,
       message: "Post liked successfully",
       like: newLike,
+      likeCount: post.likeCount,
     });
   } catch (error) {
     console.error("❌ Error liking post:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
 // ====================== deleteLike ====================== //
 const deleteLike = async (req, res) => {
   try {
-    const postId = req.params.id;
+    const postId = req.params.postId; // Changed from req.params.id to match route
     const { userId } = req.auth; // Clerk user ID
 
     // Find MongoDB user
     const dbUser = await User.findOne({ clerkId: userId });
     if (!dbUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     const post = await Post.findById(postId);
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
     }
 
     const existingLike = await Like.findOne({ postId, userId: dbUser._id });
     if (!existingLike || !existingLike.isLiked) {
-      return res
-        .status(400)
-        .json({ message: "You haven't liked this post yet" });
+      return res.status(400).json({
+        success: false,
+        message: "You haven't liked this post yet",
+      });
     }
 
     existingLike.isLiked = false;
@@ -91,17 +114,24 @@ const deleteLike = async (req, res) => {
       await post.save();
     }
 
-    return res.status(200).json({ message: "Post unliked successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Post unliked successfully",
+      likeCount: post.likeCount,
+    });
   } catch (error) {
     console.error("❌ Error unliking post:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
 // ====================== getAllLikes ====================== //
 const getAllLikes = async (req, res) => {
   try {
-    const postId = req.params.id;
+    const postId = req.params.postId; // Changed from req.params.id
 
     const likes = await Like.find({ postId, isLiked: true }).populate(
       "userId",
@@ -109,14 +139,49 @@ const getAllLikes = async (req, res) => {
     );
 
     return res.status(200).json({
+      success: true,
       message: "Likes fetched successfully",
       count: likes.length,
       data: likes,
     });
   } catch (error) {
     console.error("❌ Error fetching likes:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
-export { createLike, deleteLike, getAllLikes };
+// ====================== getUserLikeStatus ====================== //
+const getUserLikeStatus = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const { userId } = req.auth; // Clerk user ID
+
+    // Find MongoDB user
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const userLike = await Like.findOne({ postId, userId: dbUser._id });
+
+    return res.status(200).json({
+      success: true,
+      message: "User like status fetched successfully",
+      isLiked: userLike ? userLike.isLiked : false,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching user like status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export { createLike, deleteLike, getAllLikes, getUserLikeStatus };
