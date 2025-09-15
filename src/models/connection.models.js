@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const commentSchema = new mongoose.Schema({
+const connectionSchema = new mongoose.Schema({
   requesterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -16,4 +16,4 @@ const commentSchema = new mongoose.Schema({
     required: true,
   },
 });
-export const Comment = mongoose.model("Comment", commentSchema);
+export const Connection = mongoose.model("Connection", connectionSchema);
