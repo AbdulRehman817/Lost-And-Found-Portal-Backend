@@ -22,4 +22,6 @@ const connectionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+// ✅ Compound index to prevent duplicates
+connectionSchema.index({ requesterId: 1, receiverId: 1 }, { unique: true });
 export const Connection = mongoose.model("Connection", connectionSchema);
