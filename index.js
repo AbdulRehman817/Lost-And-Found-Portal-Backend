@@ -8,7 +8,7 @@ import postRoute from "./src/routes/post.routes.js";
 import userRoute from "./src/routes/user.routes.js";
 import commentRoute from "./src/routes/comment.routes.js";
 import likeRoute from "./src/routes/like.routes.js";
-
+import connectionRoutes from "./src/routes/connection.routes.js";
 import clerkWebhook from "./src/routes/clerk.webhook.routes.js";
 
 import cookieParser from "cookie-parser";
@@ -41,6 +41,7 @@ app.use("/api/v1", userRoute);
 app.use("/api/v1", postRoute);
 app.use("/api/v1", commentRoute);
 app.use("/api/v1", likeRoute);
+app.use("/api/v1", connectionRoutes);
 
 // ✅ Clerk webhook route (must be raw body)
 app.use("/api/webhooks", clerkWebhook);
