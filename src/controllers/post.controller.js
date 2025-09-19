@@ -224,4 +224,43 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { createPost, getAllPosts, updatePost, deletePost, getSinglePost };
+// ====================== getUserPosts ====================== //
+const getUserPosts = async (req, res) => {
+  try {
+    // Clerk userId
+    const { userId } = req.auth;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Find user in DB
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found in database" });
+    }
+
+    // Get posts
+    const posts = await Post.find({ userId: dbUser._id }).sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: posts.length,
+      data: posts,
+    });
+  } catch (error) {
+    console.error("Error fetching user posts:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {
+  createPost,
+  getAllPosts,
+  updatePost,
+  deletePost,
+  getSinglePost,
+  getUserPosts,
+};

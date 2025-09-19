@@ -12,21 +12,21 @@ import { requireAuth } from "@clerk/express";
 const router = express.Router();
 
 // Send a connection request
-router.post("/sendRequest", requireAuth, sendRequest);
+router.post("/connections/sendRequest", sendRequest);
 
 // Accept a request
-router.post("/acceptRequest", requireAuth, acceptRequest);
+router.post("/connections/acceptRequest", requireAuth, acceptRequest);
 
 // Reject a request
-router.post("/rejectRequest", requireAuth, rejectRequest);
+router.post("/connections/rejectRequest", requireAuth, rejectRequest);
 
 // Get all accepted connections
-router.get("/getConnections", requireAuth, getConnections);
+router.get("/connections/getConnections", requireAuth, getConnections);
 
 // Get all pending requests (optional)
-router.get("/getPendingRequests", requireAuth, getPendingRequests);
+router.get("/connections/getPendingRequests", requireAuth, getPendingRequests);
 
 // Remove/unfriend
-router.delete("/removeConnection", requireAuth, removeConnection);
+router.delete("/connections/removeConnection", requireAuth, removeConnection);
 
 export default router;

@@ -5,6 +5,7 @@ import {
   updatePost,
   deletePost,
   getSinglePost,
+  getUserPosts,
 } from "../controllers/post.controller.js";
 import { requireAuth } from "@clerk/express";
 import { upload } from "../middleware/user.multer.js";
@@ -20,6 +21,7 @@ router.post(
   syncClerkUser,
   createPost
 );
+router.get("/getUserPosts", requireAuth(), getUserPosts);
 
 // 🌐 Public route - get all posts
 router.get("/getAllPosts", getAllPosts);
