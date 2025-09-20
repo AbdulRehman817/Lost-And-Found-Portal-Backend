@@ -209,7 +209,7 @@ const getConnections = async (req, res) => {
 
 export const getPendingRequests = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses
+    const { userId } = req.auth(); // Fixed: removed parentheses
 
     // Find MongoDB user using Clerk ID
     const dbUser = await User.findOne({ clerkId: userId });
