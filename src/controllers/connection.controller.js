@@ -25,7 +25,7 @@ const sendRequest = async (req, res) => {
     // Prevent self-connection
     if (requesterId.toString() === receiverId.toString()) {
       // Fixed: compare requesterId not userId
-      return res 
+      return res
         .status(400)
         .json({ message: "Cannot send request to yourself." });
     }
@@ -226,7 +226,7 @@ export const getPendingRequests = async (req, res) => {
       receiverId: userObjectId, // Fixed: use userObjectId
       status: "pending",
     }).populate("requesterId", "name email profileImage"); // Fixed: use profileImage
-
+    console.log("request pending", requests);
     res.json({
       success: true,
       data: requests,

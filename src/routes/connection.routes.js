@@ -24,7 +24,7 @@ router.post("/connections/rejectRequest", requireAuth, rejectRequest);
 router.get("/connections/getConnections", requireAuth, getConnections);
 
 // Get all pending requests (optional)
-router.get("/connections/getPendingRequests", requireAuth, getPendingRequests);
+router.get("/connections/getPendingRequests", getPendingRequests);
 
 // Remove/unfriend
 router.delete("/connections/removeConnection", requireAuth, removeConnection);
