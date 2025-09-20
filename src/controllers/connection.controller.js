@@ -3,33 +3,34 @@ import { User } from "../models/user.models.js";
 
 const sendRequest = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses - should be req.auth not req.auth()
-    const { receiverId } = req.body;
+    const { userId } = req.auth;
+    const { receiverId, message } = req.body;
 
     // Find MongoDB user using Clerk ID
     const dbUser = await User.findOne({ clerkId: userId });
     if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const requesterId = dbUser._id; // MongoDB ObjectId
+    const requesterId = dbUser._id;
 
     // Validate receiverId
     if (!receiverId) {
-      return res.status(400).json({ message: "Receiver ID is required." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Receiver ID is required." });
     }
 
     // Prevent self-connection
     if (requesterId.toString() === receiverId.toString()) {
-      // Fixed: compare requesterId not userId
       return res
         .status(400)
-        .json({ message: "Cannot send request to yourself." });
+        .json({ success: false, message: "Cannot send request to yourself." });
     }
 
+    // Check if connection already exists
     const existing = await Connection.findOne({
       $or: [
         { requesterId, receiverId },
@@ -39,41 +40,57 @@ const sendRequest = async (req, res) => {
 
     if (existing) {
       if (existing.status === "pending") {
-        return res.status(400).json({ message: "Request already pending." });
+        return res
+          .status(400)
+          .json({ success: false, message: "Request already pending." });
       }
       if (existing.status === "accepted") {
-        return res.status(400).json({ message: "Already connected." });
+        return res
+          .status(400)
+          .json({ success: false, message: "Already connected." });
       }
       if (existing.status === "rejected") {
-        // Allow new request after rejection
+        // Option A: reset the old request
         existing.status = "pending";
+        if (message) existing.message = message;
         existing.requesterId = requesterId;
         existing.receiverId = receiverId;
         await existing.save();
+
         return res.status(200).json({
           success: true,
           message: "Request sent successfully.",
           data: existing,
         });
-      }
-    } else {
-      const newRequest = await Connection.create({
-        requesterId, // Fixed: was using userId instead of requesterId
-        receiverId, // Fixed: was using userId instead of receiverId
-        status: "pending",
-      });
 
-      res.status(201).json({
-        success: true,
-        message: "Request sent successfully.",
-        data: newRequest,
-      });
+        // Option B: create new request (if you want a new document instead of reusing)
+        // const newRequest = await Connection.create({ requesterId, receiverId, message, status: "pending" });
+        // return res.status(201).json({ success: true, message: "Request sent successfully.", data: newRequest });
+      }
     }
+
+    // No existing connection → create new
+    const newRequest = await Connection.create({
+      requesterId,
+      receiverId,
+      message,
+      status: "pending",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Request sent successfully.",
+      data: newRequest,
+    });
   } catch (error) {
     console.error("Error sending request:", error);
     res
       .status(500)
-      .json({ message: "Error sending request", error: error.message });
+      .json({
+        success: false,
+        message: "Error sending request",
+        error: error.message,
+      });
   }
 };
 
@@ -128,7 +145,7 @@ const acceptRequest = async (req, res) => {
 
 const rejectRequest = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses
+    const { userId } = req.auth;
     const { requesterId } = req.body;
 
     // Find MongoDB user using Clerk ID
@@ -140,7 +157,7 @@ const rejectRequest = async (req, res) => {
       });
     }
 
-    const receiverId = dbUser._id; // Current user's MongoDB ObjectId
+    const receiverId = dbUser._id;
 
     if (!requesterId) {
       return res.status(400).json({ message: "Requester ID is required." });
@@ -149,7 +166,7 @@ const rejectRequest = async (req, res) => {
     // Find pending request where current user is the receiver
     const request = await Connection.findOne({
       requesterId,
-      receiverId, // Fixed: was using userId instead of receiverId
+      receiverId,
       status: "pending",
     });
 
@@ -159,7 +176,7 @@ const rejectRequest = async (req, res) => {
 
     // Reject the request
     request.status = "rejected";
-    request.rejectedAt = new Date(); // Add timestamp
+    request.rejectedAt = new Date();
     await request.save();
 
     res.json({
@@ -169,9 +186,10 @@ const rejectRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Error rejecting request:", error);
-    res
-      .status(500)
-      .json({ message: "Error rejecting request", error: error.message });
+    res.status(500).json({
+      message: "Error rejecting request",
+      error: error.message,
+    });
   }
 };
 
@@ -207,36 +225,25 @@ const getConnections = async (req, res) => {
   }
 };
 
-export const getPendingRequests = async (req, res) => {
+const getPendingRequests = async (req, res) => {
   try {
-    const { userId } = req.auth(); // Fixed: removed parentheses
-
-    // Find MongoDB user using Clerk ID
+    const { userId } = req.auth;
     const dbUser = await User.findOne({ clerkId: userId });
+
     if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const userObjectId = dbUser._id;
-
     const requests = await Connection.find({
-      receiverId: userObjectId, // Fixed: use userObjectId
+      receiverId: dbUser._id,
       status: "pending",
-    }).populate("requesterId", "name email profileImage"); // Fixed: use profileImage
-    console.log("request pending", requests);
-    res.json({
-      success: true,
-      data: requests,
-    });
+    }).populate("requesterId", "name email profileImage message");
+
+    res.json({ success: true, data: requests });
   } catch (error) {
-    console.error("Error fetching pending requests:", error);
-    res.status(500).json({
-      message: "Error fetching pending requests",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -286,33 +293,23 @@ const removeConnection = async (req, res) => {
 
 const getSentRequests = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses
-
-    // Find MongoDB user using Clerk ID
+    const { userId } = req.auth;
     const dbUser = await User.findOne({ clerkId: userId });
+
     if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const userObjectId = dbUser._id;
-
     const requests = await Connection.find({
-      requesterId: userObjectId, // Fixed: use userObjectId
+      requesterId: dbUser._id,
       status: "pending",
-    }).populate("receiverId", "name email profileImage"); // Fixed: use profileImage
+    }).populate("receiverId", "name email profileImage");
 
-    res.json({
-      success: true,
-      data: requests,
-    });
+    res.json({ success: true, data: requests });
   } catch (error) {
-    console.error("Error fetching sent requests:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching sent requests", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

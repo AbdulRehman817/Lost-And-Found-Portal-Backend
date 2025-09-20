@@ -12,6 +12,10 @@ const connectionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    message: {
+      type: String,
+      default: "",
+    },
     status: {
       type: String, // ✅ Changed from Boolean to String
       enum: ["pending", "accepted", "rejected"],
