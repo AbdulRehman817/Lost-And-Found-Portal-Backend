@@ -74,18 +74,29 @@ const createPost = async (req, res) => {
 
 // ====================== getAllPosts ====================== //
 
+// ====================== getAllPosts ====================== //
 const getAllPosts = async (req, res) => {
   try {
     const { type, category, location } = req.query;
+    const { userId } = req.auth; // Clerk userId
 
-    // Dynamic filter
-    let filter = {};
+    // 1. Find the logged-in user in MongoDB
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // 2. Build filter
+    let filter = { userId: { $ne: dbUser._id } }; // ✅ exclude owner’s posts
     if (type) filter.type = type.toLowerCase();
     if (category) filter.category = category.toLowerCase();
     if (location) filter.location = { $regex: location, $options: "i" };
 
+    // 3. Fetch posts
     const posts = await Post.find(filter)
-      .populate("userId", "name email") // shows author info
+      .populate("userId", "name email profileImage") // show author info
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
