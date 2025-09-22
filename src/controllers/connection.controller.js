@@ -84,13 +84,11 @@ const sendRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Error sending request:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error sending request",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error sending request",
+      error: error.message,
+    });
   }
 };
 
@@ -193,35 +191,25 @@ const rejectRequest = async (req, res) => {
   }
 };
 
-const getConnections = async (req, res) => {
+const getAcceptedRequests = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses
-
-    // Find MongoDB user using Clerk ID
+    const { userId } = req.auth;
     const dbUser = await User.findOne({ clerkId: userId });
+
     if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const userObjectId = dbUser._id;
-
-    const connections = await Connection.find({
-      $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }], // Fixed: use userObjectId
+    const requests = await Connection.find({
+      receiverId: dbUser._id,
       status: "accepted",
-    }).populate("requesterId receiverId", "name email profileImage"); // Fixed: use profileImage
-
-    res.json({
-      success: true,
-      data: connections,
-    });
+    }).populate("requesterId", "name email profileImage message");
+    console.log("accepted request", requests);
+    res.json({ success: true, data: requests });
   } catch (error) {
-    console.error("Error fetching connections:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching connections", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -315,9 +303,10 @@ const getSentRequests = async (req, res) => {
 
 export {
   removeConnection,
-  getConnections,
+  getAcceptedRequests,
   rejectRequest,
   acceptRequest,
   sendRequest,
   getSentRequests,
+  getPendingRequests,
 };

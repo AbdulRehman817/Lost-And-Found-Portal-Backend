@@ -1,7 +1,7 @@
 import express from "express";
 import {
   removeConnection,
-  getConnections,
+  getAcceptedRequests,
   rejectRequest,
   acceptRequest,
   sendRequest,
@@ -15,13 +15,13 @@ const router = express.Router();
 router.post("/connections/sendRequest", sendRequest);
 
 // Accept a request
-router.post("/connections/acceptRequest", requireAuth, acceptRequest);
+router.post("/connections/acceptRequest", acceptRequest);
 
 // Reject a request
-router.post("/connections/rejectRequest", requireAuth, rejectRequest);
+router.post("/connections/rejectRequest", rejectRequest);
 
 // Get all accepted connections
-router.get("/connections/getConnections", requireAuth, getConnections);
+router.get("/connections/getAcceptedRequests", getAcceptedRequests);
 
 // Get all pending requests (optional)
 router.get("/connections/getPendingRequests", getPendingRequests);
