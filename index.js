@@ -10,6 +10,7 @@ import commentRoute from "./src/routes/comment.routes.js";
 import likeRoute from "./src/routes/like.routes.js";
 import connectionRoutes from "./src/routes/connection.routes.js";
 import clerkWebhook from "./src/routes/clerk.webhook.routes.js";
+import chatRoute from "./src/routes/chat.routes.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -42,6 +43,7 @@ app.use("/api/v1", postRoute);
 app.use("/api/v1", commentRoute);
 app.use("/api/v1", likeRoute);
 app.use("/api/v1", connectionRoutes);
+app.use("/api/v1", chatRoute);
 
 // ✅ Clerk webhook route (must be raw body)
 app.use("/api/webhooks", clerkWebhook);

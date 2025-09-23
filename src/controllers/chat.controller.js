@@ -57,7 +57,7 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-const getAllMessages = async (req, res) => {
+export const getAllMessages = async (req, res) => {
   try {
     const { userId } = req.auth; // Clerk gives this
     const { receiverId } = req.body;
