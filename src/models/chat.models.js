@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 const chatSchema = new mongoose.Schema(
-  ({
+  {
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -18,7 +18,7 @@ const chatSchema = new mongoose.Schema(
       enum: ["sent", "seen"],
     },
   },
-  { timestamps: true })
+  { timestamps: true }
 );
 
 export const Chat = mongoose.model("Chat", chatSchema);

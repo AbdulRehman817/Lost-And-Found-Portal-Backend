@@ -96,6 +96,7 @@ const getAllPosts = async (req, res) => {
 
     // 3. Fetch posts
     const posts = await Post.find(filter)
+      .populate("userId", "name email") // shows author info
       .populate("userId", "name email profileImage") // show author info
       .sort({ createdAt: -1 });
 

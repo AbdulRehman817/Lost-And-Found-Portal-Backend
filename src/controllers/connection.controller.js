@@ -301,6 +301,49 @@ const getSentRequests = async (req, res) => {
   }
 };
 
+const checkConnectionStatus = async (req, res) => {
+  try {
+    const { userId } = req.auth; // Clerk's ID
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const requesterId = dbUser._id;
+    const { receiverId } = req.params;
+
+    // Look for a connection between these two users
+    const existingConnection = await Connection.findOne({
+      $or: [
+        { requesterId: requesterId, receiverId: receiverId },
+        { requesterId: receiverId, receiverId: requesterId },
+      ],
+    });
+
+    if (existingConnection) {
+      return res.status(200).json({
+        success: true,
+        isConnected: true,
+        status: existingConnection.status, // e.g. pending, accepted, rejected
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      isConnected: false,
+    });
+  } catch (error) {
+    console.error("Error checking connection status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 export {
   removeConnection,
   getAcceptedRequests,
@@ -309,4 +352,5 @@ export {
   sendRequest,
   getSentRequests,
   getPendingRequests,
+  checkConnectionStatus,
 };
