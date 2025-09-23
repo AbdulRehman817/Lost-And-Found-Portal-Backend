@@ -15,7 +15,7 @@ const chatSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["sent", "delivered", "seen"],
+      enum: ["sent", "seen"],
     },
   },
   { timestamps: true })
