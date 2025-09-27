@@ -107,4 +107,44 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-export { getUserProfile, updateUserProfile, syncClerkUser };
+const getAnotherUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser) {
+      return res.status(400).json({
+        status: false,
+        message: "db user not found",
+      });
+    }
+    const { profileUserId } = req.params;
+    const profileUser = await User.findOne({ clerkId: profileUserId });
+    if (!profileUser) {
+      return res.status(400).json({
+        message: "user not found",
+      });
+    }
+    return res.status(200).json({
+      status: true,
+      message: "User profile fetched successfully",
+      data: profileUser,
+    });
+  } catch (error) {
+    return (
+      res.status(500),
+      jaon({
+        status: false,
+        messgae: "internal server error",
+        error: error.message,
+      })
+    );
+    console.log("error", error);
+  }
+};
+
+export {
+  getUserProfile,
+  updateUserProfile,
+  syncClerkUser,
+  getAnotherUserProfile,
+};
