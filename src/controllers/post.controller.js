@@ -268,11 +268,63 @@ const getUserPosts = async (req, res) => {
   }
 };
 
+// ====================== getAnotherUserPosts ====================== //
+const getAnotherUserPosts = async (req, res) => {
+  try {
+    const { userId } = req.params; // could be clerkId or mongo _id
+
+    let dbUser;
+
+    // 1️⃣ First check if it's a valid Mongo ObjectId
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      dbUser = await User.findById(userId);
+    }
+
+    // 2️⃣ If not found by ObjectId, try clerkId
+    if (!dbUser) {
+      dbUser = await User.findOne({ clerkId: userId });
+    }
+
+    if (!dbUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 3️⃣ Find posts using Mongo user._id
+    const posts = await Post.find({ userId: dbUser._id }).sort({
+      createdAt: -1,
+    });
+
+    if (!posts || posts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No posts found for this user",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      posts,
+    });
+  } catch (error) {
+    console.error("Error fetching another user posts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 export {
   createPost,
   getAllPosts,
   updatePost,
   deletePost,
   getSinglePost,
+  getAnotherUserPosts,
   getUserPosts,
 };

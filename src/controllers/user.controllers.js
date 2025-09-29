@@ -1,6 +1,7 @@
 // controllers/userController.js
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { User } from "../models/user.models.js";
+import { Post } from "../models/post.models.js";
 
 // ✅ Middleware: Sync Clerk user into MongoDB if not exists
 const syncClerkUser = async (req, res, next) => {
@@ -109,36 +110,23 @@ const updateUserProfile = async (req, res) => {
 
 const getAnotherUserProfile = async (req, res) => {
   try {
-    const { userId } = req.auth();
-    const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return res.status(400).json({
-        status: false,
-        message: "db user not found",
-      });
+    const { userId } = req.params; // ✅ match the route param
+
+    let user = await User.findOne({ clerkId: userId });
+    if (!user) {
+      user = await User.findById(userId);
     }
-    const { profileUserId } = req.params;
-    const profileUser = await User.findOne({ clerkId: profileUserId });
-    if (!profileUser) {
-      return res.status(400).json({
-        message: "user not found",
-      });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-    return res.status(200).json({
-      status: true,
-      message: "User profile fetched successfully",
-      data: profileUser,
-    });
-  } catch (error) {
-    return (
-      res.status(500),
-      jaon({
-        status: false,
-        messgae: "internal server error",
-        error: error.message,
-      })
-    );
-    console.log("error", error);
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("Error fetching another user:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

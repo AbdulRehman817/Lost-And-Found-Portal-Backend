@@ -31,10 +31,6 @@ router.get("/connections/getPendingRequests", getPendingRequests);
 router.delete("/connections/removeConnection", requireAuth, removeConnection);
 
 // Check connection status
-router.get(
-  "/connections/status/:receiverId",
-
-  checkConnectionStatus
-);
+router.get("/connections/status/:receiverId", checkConnectionStatus);
 
 export default router;

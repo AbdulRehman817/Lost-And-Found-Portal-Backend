@@ -12,6 +12,6 @@ const router = express.Router();
 // Protect routes with Clerk + also sync user into Mongo
 router.get("/profile", requireAuth(), syncClerkUser, getUserProfile);
 router.put("/profile", requireAuth(), syncClerkUser, updateUserProfile);
-router.get("/users/:profileUserId", requireAuth, getAnotherUserProfile);
+router.get("/profile/:userId", requireAuth(), getAnotherUserProfile);
 
 export default router;

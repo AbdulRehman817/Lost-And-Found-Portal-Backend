@@ -5,6 +5,7 @@ import {
   updatePost,
   deletePost,
   getSinglePost,
+  getAnotherUserPosts,
   getUserPosts,
 } from "../controllers/post.controller.js";
 import { requireAuth } from "@clerk/express";
@@ -26,6 +27,7 @@ router.get("/getUserPosts", requireAuth(), getUserPosts);
 // 🌐 Public route - get all posts
 router.get("/getAllPosts", getAllPosts);
 router.get("/feed/:id", getSinglePost);
+router.get("/posts/:userId", requireAuth(), getAnotherUserPosts);
 
 // 🔐 Update a post (auth required)
 router.put(
