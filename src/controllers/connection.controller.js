@@ -344,6 +344,63 @@ const checkConnectionStatus = async (req, res) => {
   }
 };
 
+const getConnectionCounts = async (req, res) => {
+  try {
+    const { userId } = req.auth;
+    const dbUser = await User.findOne({ clerkId: userId });
+
+    if (!dbUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const userObjectId = dbUser._id;
+
+    // Count accepted connections (where user is requester OR receiver)
+    const acceptedCount = await Connection.countDocuments({
+      status: "accepted",
+      $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
+    });
+
+    // Count pending requests received
+    const pendingReceivedCount = await Connection.countDocuments({
+      receiverId: userObjectId,
+      status: "pending",
+    });
+
+    // Count pending requests sent
+    const pendingSentCount = await Connection.countDocuments({
+      requesterId: userObjectId,
+      status: "pending",
+    });
+
+    // Count rejected requests (optional)
+    const rejectedCount = await Connection.countDocuments({
+      $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
+      status: "rejected",
+    });
+
+    res.json({
+      success: true,
+      data: {
+        acceptedCount,
+        pendingReceivedCount,
+        pendingSentCount,
+        rejectedCount,
+        totalConnections:
+          acceptedCount +
+          pendingReceivedCount +
+          pendingSentCount +
+          rejectedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error getting connection counts:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
   removeConnection,
   getAcceptedRequests,
@@ -353,4 +410,5 @@ export {
   getSentRequests,
   getPendingRequests,
   checkConnectionStatus,
+  getConnectionCounts,
 };

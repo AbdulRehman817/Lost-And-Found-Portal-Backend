@@ -7,6 +7,7 @@ import {
   sendRequest,
   getPendingRequests, // optional, if you add this controller
   checkConnectionStatus,
+  getConnectionCounts,
 } from "../controllers/connection.controller.js";
 import { requireAuth } from "@clerk/express";
 
@@ -32,5 +33,6 @@ router.delete("/connections/removeConnection", requireAuth, removeConnection);
 
 // Check connection status
 router.get("/connections/status/:receiverId", checkConnectionStatus);
+router.get("/connections/counts", getConnectionCounts);
 
 export default router;

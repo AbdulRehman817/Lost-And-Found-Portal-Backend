@@ -48,8 +48,6 @@ app.use("/api/v1", chatRoute);
 // ✅ Clerk webhook route (must be raw body)
 app.use("/api/webhooks", clerkWebhook);
 
-// 🚫 REMOVE THIS (not needed):
-// app.use(requireAuth(), syncClerkUser);
 
 // ✅ Start DB + Server
 connectDB()
