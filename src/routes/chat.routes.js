@@ -1,8 +1,13 @@
 import express from "express";
 const router = express.Router();
-import { getAllMessages, sendMessage } from "../controllers/chat.controller.js";
+import {
+  getAllMessages,
+  getConnectedUsers,
+  sendMessage,
+} from "../controllers/chat.controller.js";
 import { requireAuth } from "@clerk/express";
 
-router.post("/chat/sendMessage", requireAuth, sendMessage);
-router.get("/chat/getAllMessages", requireAuth, getAllMessages);
+router.post("/sendMessage", requireAuth(), sendMessage);
+router.get("/getAllMessages", requireAuth(), getAllMessages);
+router.get("/connected-users", requireAuth(), getConnectedUsers);
 export default router;

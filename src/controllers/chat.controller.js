@@ -1,6 +1,6 @@
 import { Chat } from "../models/chat.models.js";
 import { User } from "../models/user.models.js";
-
+import { Connection } from "../models/connection.models.js";
 export const sendMessage = async (req, res) => {
   try {
     const { userId } = req.auth; // assuming Clerk adds this
@@ -110,5 +110,48 @@ export const getAllMessages = async (req, res) => {
       message: "Server error.",
       error: error.message,
     });
+  }
+};
+
+export const getConnectedUsers = async (req, res) => {
+  try {
+    // Get logged in user's MongoDB ID from Clerk
+    const { userId } = req.auth;
+
+    // Find user from MongoDB
+    const user = await User.findOne({ clerkId: userId });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Find accepted connections
+    const connections = await Connection.find({
+      status: "accepted",
+      $or: [{ requesterId: user._id }, { receiverId: user._id }],
+    })
+      .populate("requesterId", "name profileImage isOnline")
+      .populate("receiverId", "name profileImage isOnline");
+
+    // Get connected users
+    const connectedUsers = connections.map((c) => {
+      const otherUser =
+        c.requesterId._id.toString() === user._id.toString()
+          ? c.receiverId
+          : c.requesterId;
+
+      return {
+        _id: otherUser._id, // ✅ only MongoDB ID
+        name: otherUser.name,
+        profileImage: otherUser.profileImage,
+        isOnline: otherUser.isOnline,
+      };
+    });
+
+    res.json({ success: true, connectedUsers });
+  } catch (err) {
+    console.error("Error fetching connected users:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

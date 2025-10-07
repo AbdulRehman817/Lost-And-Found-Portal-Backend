@@ -43,11 +43,10 @@ app.use("/api/v1", postRoute);
 app.use("/api/v1", commentRoute);
 app.use("/api/v1", likeRoute);
 app.use("/api/v1", connectionRoutes);
-app.use("/api/v1", chatRoute);
+app.use("/api/v1/chat", chatRoute);
 
 // ✅ Clerk webhook route (must be raw body)
 app.use("/api/webhooks", clerkWebhook);
-
 
 // ✅ Start DB + Server
 connectDB()

@@ -25,9 +25,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    otp: { type: String }, // store current OTP
-    otpExpiry: { type: Date }, // OTP expiration time
-    isVerified: { type: Boolean, default: false }, // email verified
+    isOnline: { type: Boolean, default: false },
   },
   {
     timestamps: true,
