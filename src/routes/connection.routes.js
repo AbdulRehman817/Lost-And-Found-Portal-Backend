@@ -4,6 +4,7 @@ import {
   getAcceptedRequests,
   rejectRequest,
   acceptRequest,
+  cancelRequest,
   sendRequest,
   getPendingRequests, // optional, if you add this controller
   checkConnectionStatus,
@@ -34,5 +35,7 @@ router.delete("/connections/removeConnection", requireAuth, removeConnection);
 // Check connection status
 router.get("/connections/status/:receiverId", checkConnectionStatus);
 router.get("/connections/counts", getConnectionCounts);
+
+router.post("/connections/cancelRequest", requireAuth(), cancelRequest);
 
 export default router;

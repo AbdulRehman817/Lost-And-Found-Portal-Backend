@@ -6,31 +6,26 @@ const sendRequest = async (req, res) => {
     const { userId } = req.auth;
     const { receiverId, message } = req.body;
 
-    // Find MongoDB user using Clerk ID
     const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
+    if (!dbUser)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
     const requesterId = dbUser._id;
 
-    // Validate receiverId
     if (!receiverId) {
       return res
         .status(400)
         .json({ success: false, message: "Receiver ID is required." });
     }
 
-    // Prevent self-connection
     if (requesterId.toString() === receiverId.toString()) {
       return res
         .status(400)
         .json({ success: false, message: "Cannot send request to yourself." });
     }
 
-    // Check if connection already exists
     const existing = await Connection.findOne({
       $or: [
         { requesterId, receiverId },
@@ -50,26 +45,19 @@ const sendRequest = async (req, res) => {
           .json({ success: false, message: "Already connected." });
       }
       if (existing.status === "rejected") {
-        // Option A: reset the old request
         existing.status = "pending";
-        if (message) existing.message = message;
         existing.requesterId = requesterId;
         existing.receiverId = receiverId;
+        if (message) existing.message = message;
         await existing.save();
-
         return res.status(200).json({
           success: true,
           message: "Request sent successfully.",
           data: existing,
         });
-
-        // Option B: create new request (if you want a new document instead of reusing)
-        // const newRequest = await Connection.create({ requesterId, receiverId, message, status: "pending" });
-        // return res.status(201).json({ success: true, message: "Request sent successfully.", data: newRequest });
       }
     }
 
-    // No existing connection → create new
     const newRequest = await Connection.create({
       requesterId,
       receiverId,
@@ -94,45 +82,34 @@ const sendRequest = async (req, res) => {
 
 const acceptRequest = async (req, res) => {
   try {
-    const { userId } = req.auth; // Fixed: removed parentheses
-    const { requesterId } = req.body; // Fixed: was "recieverId" (typo)
+    const { userId } = req.auth;
+    const { requesterId } = req.body;
 
-    // Find MongoDB user using Clerk ID
     const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+    if (!dbUser)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    const receiverId = dbUser._id; // Current user's MongoDB ObjectId
+    const receiverId = dbUser._id;
 
-    if (!requesterId) {
+    if (!requesterId)
       return res.status(400).json({ message: "Requester ID is required." });
-    }
 
-    // Find pending request where current user is the receiver
     const request = await Connection.findOne({
       requesterId,
-      receiverId, // Fixed: was using userId instead of receiverId
+      receiverId,
       status: "pending",
     });
 
-    if (!request) {
+    if (!request)
       return res.status(404).json({ message: "No pending request found." });
-    }
 
-    // Accept the request
     request.status = "accepted";
-    request.acceptedAt = new Date(); // Add timestamp
+    request.acceptedAt = new Date();
     await request.save();
 
-    res.json({
-      success: true,
-      message: "Request accepted.",
-      data: request,
-    });
+    res.json({ success: true, message: "Request accepted.", data: request });
   } catch (error) {
     console.error("Error accepting request:", error);
     res
@@ -146,48 +123,36 @@ const rejectRequest = async (req, res) => {
     const { userId } = req.auth;
     const { requesterId } = req.body;
 
-    // Find MongoDB user using Clerk ID
     const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+    if (!dbUser)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     const receiverId = dbUser._id;
 
-    if (!requesterId) {
+    if (!requesterId)
       return res.status(400).json({ message: "Requester ID is required." });
-    }
 
-    // Find pending request where current user is the receiver
     const request = await Connection.findOne({
       requesterId,
       receiverId,
       status: "pending",
     });
 
-    if (!request) {
+    if (!request)
       return res.status(404).json({ message: "No pending request found." });
-    }
 
-    // Reject the request
     request.status = "rejected";
     request.rejectedAt = new Date();
     await request.save();
 
-    res.json({
-      success: true,
-      message: "Request rejected.",
-      data: request,
-    });
+    res.json({ success: true, message: "Request rejected.", data: request });
   } catch (error) {
     console.error("Error rejecting request:", error);
-    res.status(500).json({
-      message: "Error rejecting request",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Error rejecting request", error: error.message });
   }
 };
 
@@ -303,19 +268,17 @@ const getSentRequests = async (req, res) => {
 
 const checkConnectionStatus = async (req, res) => {
   try {
-    const { userId } = req.auth; // Clerk's ID
+    const { userId } = req.auth; // clerk id
     const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+    if (!dbUser)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     const requesterId = dbUser._id;
     const { receiverId } = req.params;
 
-    // Look for a connection between these two users
+    // Find any connection doc between them
     const existingConnection = await Connection.findOne({
       $or: [
         { requesterId: requesterId, receiverId: receiverId },
@@ -323,24 +286,49 @@ const checkConnectionStatus = async (req, res) => {
       ],
     });
 
-    if (existingConnection) {
+    if (!existingConnection) {
       return res.status(200).json({
         success: true,
-        isConnected: true,
-        status: existingConnection.status, // e.g. pending, accepted, rejected
+        isConnected: false,
+        isPending: false,
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      isConnected: false,
-    });
+    // connection exists - map DB status to flags
+    const status = existingConnection.status; // pending / accepted / rejected
+    if (status === "accepted") {
+      return res.status(200).json({
+        success: true,
+        isConnected: true,
+        isPending: false,
+        status: "accepted",
+      });
+    } else if (status === "pending") {
+      // Determine who sent the pending request (optional: return connectionId)
+      const isRequester =
+        existingConnection.requesterId.toString() === requesterId.toString();
+      return res.status(200).json({
+        success: true,
+        isConnected: false,
+        isPending: true,
+        status: "pending",
+        connectionId: existingConnection._id,
+        amRequester: isRequester, // useful for frontend (to show Cancel only for requester)
+      });
+    } else {
+      // rejected or other
+      return res.status(200).json({
+        success: true,
+        isConnected: false,
+        isPending: false,
+        status: status,
+      });
+    }
   } catch (error) {
     console.error("Error checking connection status:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -349,33 +337,28 @@ const getConnectionCounts = async (req, res) => {
     const { userId } = req.auth;
     const dbUser = await User.findOne({ clerkId: userId });
 
-    if (!dbUser) {
+    if (!dbUser)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
     const userObjectId = dbUser._id;
 
-    // Count accepted connections (where user is requester OR receiver)
     const acceptedCount = await Connection.countDocuments({
       status: "accepted",
       $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
     });
 
-    // Count pending requests received
     const pendingReceivedCount = await Connection.countDocuments({
       receiverId: userObjectId,
       status: "pending",
     });
 
-    // Count pending requests sent
     const pendingSentCount = await Connection.countDocuments({
       requesterId: userObjectId,
       status: "pending",
     });
 
-    // Count rejected requests (optional)
     const rejectedCount = await Connection.countDocuments({
       $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
       status: "rejected",
@@ -401,12 +384,55 @@ const getConnectionCounts = async (req, res) => {
   }
 };
 
+const cancelRequest = async (req, res) => {
+  try {
+    const { userId } = req.auth;
+    const { receiverId } = req.body; // caller provides the receiverId of the pending request to cancel
+
+    const dbUser = await User.findOne({ clerkId: userId });
+    if (!dbUser)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    const requesterId = dbUser._id;
+
+    if (!receiverId)
+      return res
+        .status(400)
+        .json({ success: false, message: "Receiver ID is required." });
+
+    // Find pending request where current user is the requester
+    const request = await Connection.findOneAndDelete({
+      requesterId,
+      receiverId,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Pending request not found." });
+    }
+
+    res.json({ success: true, message: "Request cancelled successfully." });
+  } catch (error) {
+    console.error("Error cancelling request:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error cancelling request",
+      error: error.message,
+    });
+  }
+};
+
 export {
   removeConnection,
   getAcceptedRequests,
   rejectRequest,
   acceptRequest,
   sendRequest,
+  cancelRequest,
   getSentRequests,
   getPendingRequests,
   checkConnectionStatus,

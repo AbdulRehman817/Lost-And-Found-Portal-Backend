@@ -21,21 +21,22 @@ export const uploadImageToImageKit = (filePath) => {
         fileName: fileName,
         folder: "/uploads",
       },
-      async function (error, result) {
+      function (error, result) {
         if (error) {
           console.error("❌ ImageKit Upload Error:", error);
           reject(error);
         } else {
           console.log("📷 Uploaded to ImageKit:", result.url);
 
-          // Automatically delete the uploaded image
+          // ✅ Delete local file after upload
           try {
-            await imagekit.deleteFile(result.fileId);
-            console.log("🗑️ Image deleted automatically:", result.fileId);
+            fs.unlinkSync(filePath);
+            console.log("🗑️ Local file deleted:", filePath);
           } catch (deleteError) {
-            console.error("❌ Error deleting uploaded image:", deleteError);
+            console.error("❌ Error deleting local file:", deleteError);
           }
 
+          // ✅ Return the ImageKit URL (DO NOT DELETE FROM IMAGEKIT)
           resolve(result.url);
         }
       }
