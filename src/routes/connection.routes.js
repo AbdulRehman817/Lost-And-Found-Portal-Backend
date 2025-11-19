@@ -6,7 +6,9 @@ import {
   acceptRequest,
   cancelRequest,
   sendRequest,
-  getPendingRequests, // optional, if you add this controller
+  getSentRequests,
+  getMyConnections,
+  getPendingRequests,
   checkConnectionStatus,
   getConnectionCounts,
 } from "../controllers/connection.controller.js";
@@ -14,28 +16,49 @@ import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 
-// Send a connection request
-router.post("/connections/sendRequest", sendRequest);
+// 🔐 Send a connection request (auth required)
+router.post("/connections/sendRequest", requireAuth(), sendRequest);
 
-// Accept a request
-router.post("/connections/acceptRequest", acceptRequest);
+// 🔐 Accept a request (auth required)
+router.post("/connections/acceptRequest", requireAuth(), acceptRequest);
 
-// Reject a request
-router.post("/connections/rejectRequest", rejectRequest);
+// 🔐 Reject a request (auth required)
+router.post("/connections/rejectRequest", requireAuth(), rejectRequest);
 
-// Get all accepted connections
-router.get("/connections/getAcceptedRequests", getAcceptedRequests);
-
-// Get all pending requests (optional)
-router.get("/connections/getPendingRequests", getPendingRequests);
-
-// Remove/unfriend
-router.delete("/connections/removeConnection", requireAuth, removeConnection);
-
-// Check connection status
-router.get("/connections/status/:receiverId", checkConnectionStatus);
-router.get("/connections/counts", getConnectionCounts);
-
+// 🔐 Cancel a pending request you sent (auth required)
 router.post("/connections/cancelRequest", requireAuth(), cancelRequest);
+
+// 🔐 Get all pending requests you received (auth required)
+router.get(
+  "/connections/getPendingRequests",
+  requireAuth(),
+  getPendingRequests
+);
+
+// 🔐 Get all accepted requests you received (auth required)
+router.get(
+  "/connections/getAcceptedRequests",
+  requireAuth(),
+  getAcceptedRequests
+);
+
+// 🔐 Get all pending requests you sent (auth required)
+router.get("/connections/getSentRequests", requireAuth(), getSentRequests);
+
+// 🔐 Get all your connections - bidirectional (auth required)
+router.get("/connections/getMyConnections", requireAuth(), getMyConnections);
+
+// 🔐 Check connection status with a specific user (auth required)
+router.get(
+  "/connections/status/:receiverId",
+  requireAuth(),
+  checkConnectionStatus
+);
+
+// 🔐 Get connection counts/statistics (auth required)
+router.get("/connections/counts", requireAuth(), getConnectionCounts);
+
+// 🔐 Remove/unfriend a connection (auth required)
+router.delete("/connections/removeConnection", requireAuth(), removeConnection);
 
 export default router;

@@ -1,4 +1,3 @@
-// controllers/userController.js
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { User } from "../models/user.models.js";
 import { Post } from "../models/post.models.js";
@@ -129,6 +128,8 @@ const getAnotherUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 export {
   getUserProfile,

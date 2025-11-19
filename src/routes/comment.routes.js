@@ -6,9 +6,11 @@ import {
   deleteComment,
 } from "../controllers/comment.controller.js";
 import { requireAuth } from "@clerk/express";
+import { getCommentNotifications } from "../controllers/commentNotification.controller.js";
 
 const router = express.Router();
 
+router.get("/notifications/comments", requireAuth(), getCommentNotifications);
 // ✅ Create comment for a post
 router.post("/posts/:postId/comments", createComment);
 

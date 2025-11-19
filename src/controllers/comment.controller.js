@@ -1,8 +1,8 @@
 import { Comment } from "../models/comment.models.js";
+import { Notification } from "../models/notification.models.js";
 import { Post } from "../models/post.models.js";
 import { User } from "../models/user.models.js";
-
-// ✅ Helper: get MongoDB user from Clerk
+// ✅ Helper: get MongoDB user from Clerkz
 const getDbUser = async (clerkId) => {
   return await User.findOne({ clerkId });
 };
@@ -13,46 +13,51 @@ const createComment = async (req, res) => {
   const { message, parentId } = req.body;
 
   const postId = req.params.postId;
-  const userId = req.auth().userId; // Clerk userId
-  console.log("Clerk userId:", userId);
+  const clerkId = req.auth().userId;
 
   if (!postId)
-    return res
-      .status(400)
-      .json({ success: false, error: "Post ID is required" });
-  if (!message?.trim())
-    return res
-      .status(400)
-      .json({ success: false, error: "Message is required" });
+    return res.status(400).json({ success: false, error: "Post ID required" });
 
-  // ✅ Find Mongo user by ClerkId
-  const user = await User.findOne({ clerkId: userId });
-  console.log("Found user:", user); // Debug log
+  if (!message?.trim())
+    return res.status(400).json({ success: false, error: "Message required" });
+
+  // Get DB user
+  const user = await User.findOne({ clerkId });
   if (!user)
     return res.status(404).json({ success: false, error: "User not found" });
 
-  // ✅ Ensure post exists
+  // Ensure post exists
   const post = await Post.findById(postId);
   if (!post)
     return res.status(404).json({ success: false, error: "Post not found" });
 
-  // ✅ Save comment with userId
+  // Save comment
   const newComment = await Comment.create({
     postId,
     userId: user._id,
     message,
     parentId: parentId || null,
   });
-  console.log("✅ Comment saved to DB:", newComment); // Add this line
-  // ✅ Increment post commentCount
+
   post.commentCount = (post.commentCount || 0) + 1;
   await post.save();
 
-  // ✅ Return with populated user (name + email + profileImage)
+  // Populate for UI
   const populated = await newComment.populate(
     "userId",
     "name email profileImage"
   );
+
+  // 🔔 Create notification for post owner
+  if (post.userId.toString() !== user._id.toString()) {
+    await Notification.create({
+      userId: post.userId, // target
+      type: "comment",
+      message: `${user.name} commented on your post`,
+      postId: post._id,
+      fromUser: user._id,
+    });
+  }
 
   return res.status(201).json({
     success: true,

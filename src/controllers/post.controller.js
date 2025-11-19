@@ -8,9 +8,8 @@ import mongoose from "mongoose";
 // ====================== createPost ====================== //
 const createPost = async (req, res) => {
   try {
-    const { title, description, category, tags, location, type, name, email } =
-      req.body;
-    const userId = req.auth().userId; // Clerk userId
+    const { title, description, category, tags, location, type } = req.body;
+    const { userId } = req.auth;
     console.log(userId);
 
     // 1. Validate required fields
@@ -41,27 +40,25 @@ const createPost = async (req, res) => {
 
     // find user in Mongo by Clerk ID
     const user = await User.findOne({ clerkId: userId });
-    console.log("name", user);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // validate image upload
-
+    // ✅ Only store fields that exist in Post schema
     const newPost = await Post.create({
       title,
       description,
       category,
       location,
-      type,
-      tags,
+      type: type.toLowerCase(),
+      tags: tags || [],
       imageUrl,
-      name: user.name, // ✅ auto-fill
-      email: user.email, // ✅ auto-fill
-      userId: user._id, // ✅ link to MongoDB user
-      profileImage: user.profileImage, // ✅ Clerk profile image
+      userId: user._id, // ✅ Only store userId reference
     });
+
+    // ✅ Populate user details after creation
+    await newPost.populate("userId", "name email profileImage");
 
     res.status(201).json({ success: true, post: newPost });
   } catch (error) {
@@ -70,34 +67,29 @@ const createPost = async (req, res) => {
   }
 };
 
-// ====================== getAllPosts ====================== //
-
-// ====================== getAllPosts ====================== //
-
-// ====================== getAllPosts ====================== //
 const getAllPosts = async (req, res) => {
   try {
     const { type, category, location } = req.query;
-    const { userId } = req.auth; // Clerk userId
 
-    // 1. Find the logged-in user in MongoDB
-    const dbUser = await User.findOne({ clerkId: userId });
-    if (!dbUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    // Build filter
+    let filter = {};
+
+    // ✅ Only exclude user's posts if authenticated
+    if (req.auth?.userId) {
+      const dbUser = await User.findOne({ clerkId: req.auth.userId });
+      if (dbUser) {
+        filter.userId = { $ne: dbUser._id }; // Exclude logged-in user's posts
+      }
     }
 
-    // 2. Build filter
-    let filter = { userId: { $ne: dbUser._id } }; // ✅ exclude owner’s posts
+    // Apply other filters
     if (type) filter.type = type.toLowerCase();
     if (category) filter.category = category.toLowerCase();
     if (location) filter.location = { $regex: location, $options: "i" };
 
-    // 3. Fetch posts
+    // Fetch posts
     const posts = await Post.find(filter)
-      .populate("userId", "name email") // shows author info
-      .populate("userId", "name email profileImage") // show author info
+      .populate("userId", "name email profileImage")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -116,21 +108,23 @@ const getAllPosts = async (req, res) => {
 
 const getSinglePost = async (req, res) => {
   try {
-    const { id } = req.params; // get post ID
+    const { id } = req.params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid product ID" });
+      return res.status(400).json({ message: "Invalid post ID" });
     }
+
     const post = await Post.findById(id).populate(
       "userId",
-      "name email imageUrl"
-    ); // populate author info
+      "name email profileImage" // ✅ Fixed: changed imageUrl to profileImage
+    );
 
     if (!post) {
-      return res.status(400).json({
+      return res.status(404).json({
         message: "Post not found",
       });
     }
-    console.log(post);
+
     return res.status(200).json({
       message: "Post found",
       data: post,
@@ -152,6 +146,7 @@ const updatePost = async (req, res) => {
 
     const { title, type, description, tags, category, location, imageUrl } =
       req.body;
+
     const post = await Post.findById(id);
     if (!post) {
       return res
@@ -181,10 +176,12 @@ const updatePost = async (req, res) => {
     if (category) post.category = category;
     if (location) post.location = location;
     if (imageUrl) post.imageUrl = imageUrl;
-
     if (tags) post.tags = tags;
 
     await post.save();
+
+    // ✅ Populate user info before returning
+    await post.populate("userId", "name email profileImage");
 
     return res.status(200).json({
       success: true,
@@ -239,7 +236,6 @@ const deletePost = async (req, res) => {
 // ====================== getUserPosts ====================== //
 const getUserPosts = async (req, res) => {
   try {
-    // Clerk userId
     const { userId } = req.auth;
 
     if (!userId) {
@@ -252,10 +248,10 @@ const getUserPosts = async (req, res) => {
       return res.status(404).json({ message: "User not found in database" });
     }
 
-    // Get posts
-    const posts = await Post.find({ userId: dbUser._id }).sort({
-      createdAt: -1,
-    });
+    // Get posts with populated user info
+    const posts = await Post.find({ userId: dbUser._id })
+      .populate("userId", "name email profileImage")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -271,7 +267,7 @@ const getUserPosts = async (req, res) => {
 // ====================== getAnotherUserPosts ====================== //
 const getAnotherUserPosts = async (req, res) => {
   try {
-    const { userId } = req.params; // could be clerkId or mongo _id
+    const { userId } = req.params;
 
     let dbUser;
 
@@ -293,9 +289,9 @@ const getAnotherUserPosts = async (req, res) => {
     }
 
     // 3️⃣ Find posts using Mongo user._id
-    const posts = await Post.find({ userId: dbUser._id }).sort({
-      createdAt: -1,
-    });
+    const posts = await Post.find({ userId: dbUser._id })
+      .populate("userId", "name email profileImage")
+      .sort({ createdAt: -1 });
 
     if (!posts || posts.length === 0) {
       return res.status(404).json({
