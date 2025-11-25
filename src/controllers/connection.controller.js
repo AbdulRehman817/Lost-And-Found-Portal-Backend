@@ -486,19 +486,25 @@ const checkConnectionStatus = async (req, res) => {
 };
 
 // ====================== getConnectionCounts ====================== //
-const getConnectionCounts = async (req, res) => {
+const getOtherUserConnectionCounts = async (req, res) => {
   try {
-    const { userId } = req.auth;
-    const dbUser = await User.findOne({ clerkId: userId });
+    const { profileUserId } = req.params;
 
-    if (!dbUser) {
+    // Validate profileUserId
+    if (!mongoose.Types.ObjectId.isValid(profileUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid profile user ID",
+      });
+    }
+
+    const userExists = await User.findById(profileUserId);
+    if (!userExists) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
-
-    const userObjectId = dbUser._id;
 
     const [
       acceptedCount,
@@ -508,23 +514,23 @@ const getConnectionCounts = async (req, res) => {
     ] = await Promise.all([
       Connection.countDocuments({
         status: "accepted",
-        $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
+        $or: [{ requesterId: profileUserId }, { receiverId: profileUserId }],
       }),
       Connection.countDocuments({
-        receiverId: userObjectId,
+        receiverId: profileUserId,
         status: "pending",
       }),
       Connection.countDocuments({
-        requesterId: userObjectId,
+        requesterId: profileUserId,
         status: "pending",
       }),
       Connection.countDocuments({
-        $or: [{ requesterId: userObjectId }, { receiverId: userObjectId }],
+        $or: [{ requesterId: profileUserId }, { receiverId: profileUserId }],
         status: "rejected",
       }),
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         acceptedCount,
@@ -539,7 +545,7 @@ const getConnectionCounts = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error getting connection counts:", error);
+    console.error("Error getting other user's connection counts:", error);
     res.status(500).json({
       success: false,
       message: "Error getting connection counts",
@@ -665,7 +671,7 @@ export {
   getMyConnections,
   getAcceptedRequests,
   checkConnectionStatus,
-  getConnectionCounts,
+  getOtherUserConnectionCounts,
   cancelRequest,
   removeConnection,
 };

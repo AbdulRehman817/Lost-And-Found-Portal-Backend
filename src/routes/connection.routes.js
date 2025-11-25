@@ -10,7 +10,7 @@ import {
   getMyConnections,
   getPendingRequests,
   checkConnectionStatus,
-  getConnectionCounts,
+  getOtherUserConnectionCounts,
 } from "../controllers/connection.controller.js";
 import { requireAuth } from "@clerk/express";
 
@@ -56,7 +56,7 @@ router.get(
 );
 
 // 🔐 Get connection counts/statistics (auth required)
-router.get("/connections/counts", requireAuth(), getConnectionCounts);
+router.get("/connection-counts/:profileUserId", getOtherUserConnectionCounts);
 
 // 🔐 Remove/unfriend a connection (auth required)
 router.delete("/connections/removeConnection", requireAuth(), removeConnection);

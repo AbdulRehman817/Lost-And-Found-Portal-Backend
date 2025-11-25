@@ -18,7 +18,7 @@ export const getCommentNotifications = async (req, res) => {
       type: "comment",
     })
       .populate("fromUser", "name profileImage")
-      .populate("postId", "content")
+      .populate("postId", "message")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
