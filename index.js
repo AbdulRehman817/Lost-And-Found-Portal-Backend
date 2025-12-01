@@ -42,6 +42,10 @@ io.on("connection", async (socket) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the Backend!");
+});
+
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -53,6 +57,7 @@ app.use("/api/v1", commentRoute);
 app.use("/api/v1", likeRoute);
 app.use("/api/v1", connectionRoutes);
 app.use("/api/v1/chat", chatRoute);
+app.use((req, res, next) => {});
 
 // ✅ Clerk webhook route (must be raw body)
 app.use("/api/webhooks", clerkWebhook);
