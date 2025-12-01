@@ -16,3 +16,5 @@ Thumbs.db
 # Optional: ignore build files if you ever use TypeScript or bundlers
 dist/
 build/
+.vercel
+.env*.local
