@@ -48,7 +48,7 @@ app.get("/", (req, res) => {
 
 app.use(
   cors({
-    origin: "https://lost-and-found-frontend-five.vercel.app",
+    origin: "https://lost-and-found-two-nu.vercel.app",
     credentials: true,
   })
 );
