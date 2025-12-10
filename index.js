@@ -21,7 +21,7 @@ const app = express();
 const server = createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "http://localhost:5173", credentials: true },
+  cors: { origin: "https://lost-and-found-two-nu.vercel.app", credentials: true },
 });
 
 global.io = io; // ✅ use in controller
