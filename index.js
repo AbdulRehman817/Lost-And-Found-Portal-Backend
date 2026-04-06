@@ -21,7 +21,10 @@ const app = express();
 const server = createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "https://lost-and-found-two-nu.vercel.app", credentials: true },
+  cors: {
+    origin: ["https://lost-and-found-two-nu.vercel.app", "http://localhost:5173"],
+    credentials: true
+  },
 });
 
 global.io = io; // ✅ use in controller
@@ -48,8 +51,7 @@ app.get("/", (req, res) => {
 
 app.use(
   cors({
-    origin: "https://lost-and-found-two-nu.vercel.app",
-    // origin: "http://localhost:5173",
+    origin: ["https://lost-and-found-two-nu.vercel.app", "http://localhost:5173"],
     credentials: true,
   })
 );
